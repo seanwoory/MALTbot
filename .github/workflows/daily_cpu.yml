@@ -29,6 +29,7 @@ jobs:
           python -m pip install -U pip setuptools wheel
           pip install "numpy==1.26.4" "scipy==1.11.4" "scikit-learn==1.5.2"
           pip install "matbench==0.6.5" matminer pymatgen pandas tqdm pyyaml
+
       - name: Run CPU smoke (matbench_steels)
         run: |
           DATE=$(date +%F)
@@ -37,7 +38,8 @@ jobs:
           python scripts/cpu_smoke_matbench.py \
             --task matbench_steels \
             --seed 42 \
-            --out "${OUT_DIR}/results.json"    
+            --out "${OUT_DIR}/results.json"
+
       - name: Update RESULTS.md
         run: |
           DATE=$(date +%F)
@@ -45,15 +47,28 @@ jobs:
 
           MAE=$(python -c "import json; from datetime import date; p=f'results/daily/{date.today().isoformat()}/cpu_smoke_steels/results.json'; d=json.load(open(p)); mae=d.get('scores',{}).get('mae',{}).get('mean',None); print('-' if mae is None else f'{mae:.6f}')")
 
-          touch RESULTS.md
-          if ! grep -q "DATE | TASK | MODEL" RESULTS.md; then
-            cat > RESULTS.md << 'EOF'
-# Results (Matbench v0.1)
-
-DATE | TASK | MODEL | MAE(mean) | NOTES | ARTIFACT
----|---|---|---:|---|---
-EOF
+          # Create header if missing
+          if [ ! -f RESULTS.md ] || ! grep -q "DATE | TASK | MODEL" RESULTS.md; then
+            printf "%s\n" \
+              "# Results (Matbench v0.1)" \
+              "" \
+              "DATE | TASK | MODEL | MAE(mean) | NOTES | ARTIFACT" \
+              "---|---|---|---:|---|---" \
+              > RESULTS.md
           fi
 
           LINE="${DATE} | matbench_steels | cpu_smoke(len+Ridge) | ${MAE} | actions smoke | ${OUT_DIR}/results.json"
-          grep -qF "$LINE" RESULTS.md || echo "$LINE" >> RESULTS.md  
+          grep -qF "$LINE" RESULTS.md || echo "$LINE" >> RESULTS.md
+
+      - name: Create PR
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: "daily(actions): cpu smoke (steels) ${{ github.run_id }}"
+          title: "daily(actions): cpu smoke (matbench_steels)"
+          body: |
+            Automated daily CPU smoke test.
+            - Runs matbench_steels end-to-end (lightweight)
+            - Writes results.json under results/daily/
+            - Appends one line to RESULTS.md
+          branch: "bot/daily-cpu-smoke"
+          delete-branch: true
