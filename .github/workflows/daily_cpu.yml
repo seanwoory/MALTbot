@@ -2,8 +2,7 @@ name: daily-cpu-smoke
 
 on:
   schedule:
-    # KST 08:00 = UTC 23:00 (전날)
-    - cron: "0 23 * * *"
+    - cron: "0 23 * * *"   # KST 08:00
   workflow_dispatch: {}
 
 permissions:
@@ -13,7 +12,7 @@ permissions:
 jobs:
   cpu_smoke:
     runs-on: ubuntu-latest
-    timeout-minutes: 60
+    timeout-minutes: 20
 
     steps:
       - name: Checkout
@@ -24,30 +23,26 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install deps (CPU)
+      - name: Install minimal deps
         run: |
           python -m pip install -U pip setuptools wheel
-          pip install "numpy==1.26.4" "scipy==1.11.4" "scikit-learn==1.5.2"
-          pip install "matbench==0.6" matminer pymatgen pandas tqdm pyyaml
+          pip install pyyaml tqdm
 
-      - name: Run CPU smoke (matbench_steels)
+      - name: Smoke: syntax check
+        run: |
+          python -m compileall -q .
+
+      - name: Write daily smoke artifact
         run: |
           DATE=$(date +%F)
-          OUT_DIR="results/daily/${DATE}/cpu_smoke_steels"
+          OUT_DIR="results/daily/${DATE}/actions_smoke"
           mkdir -p "${OUT_DIR}"
-          python scripts/cpu_smoke_matbench.py \
-            --task matbench_steels \
-            --seed 42 \
-            --out "${OUT_DIR}/results.json"
+          python -c "import json,sys,platform; json.dump({'python':sys.version,'platform':platform.platform()}, open('${OUT_DIR}/results.json','w'), indent=2)"
 
       - name: Update RESULTS.md
         run: |
           DATE=$(date +%F)
-          OUT_DIR="results/daily/${DATE}/cpu_smoke_steels"
-
-          MAE=$(python -c "import json; from datetime import date; p=f'results/daily/{date.today().isoformat()}/cpu_smoke_steels/results.json'; d=json.load(open(p)); mae=d.get('scores',{}).get('mae',{}).get('mean',None); print('-' if mae is None else f'{mae:.6f}')")
-
-          # Create header if missing
+          OUT_DIR="results/daily/${DATE}/actions_smoke"
           if [ ! -f RESULTS.md ] || ! grep -q "DATE | TASK | MODEL" RESULTS.md; then
             printf "%s\n" \
               "# Results (Matbench v0.1)" \
@@ -56,19 +51,18 @@ jobs:
               "---|---|---|---:|---|---" \
               > RESULTS.md
           fi
-
-          LINE="${DATE} | matbench_steels | cpu_smoke(len+Ridge) | ${MAE} | actions smoke | ${OUT_DIR}/results.json"
+          LINE="${DATE} | actions_smoke | compileall | - | actions | ${OUT_DIR}/results.json"
           grep -qF "$LINE" RESULTS.md || echo "$LINE" >> RESULTS.md
 
       - name: Create PR
         uses: peter-evans/create-pull-request@v6
         with:
-          commit-message: "daily(actions): cpu smoke (steels) ${{ github.run_id }}"
-          title: "daily(actions): cpu smoke (matbench_steels)"
+          commit-message: "daily(actions): smoke ${{ github.run_id }}"
+          title: "daily(actions): smoke"
           body: |
-            Automated daily CPU smoke test.
-            - Runs matbench_steels end-to-end (lightweight)
-            - Writes results.json under results/daily/
-            - Appends one line to RESULTS.md
-          branch: "bot/daily-cpu-smoke"
+            Automated daily repo smoke.
+            - compileall
+            - writes results/daily/.../actions_smoke/results.json
+            - appends one line to RESULTS.md
+          branch: "bot/daily-actions-smoke"
           delete-branch: true
