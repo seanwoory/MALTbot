@@ -4,9 +4,9 @@
 
 - [Matbench Ops Rules](docs/MATBENCH_OPS.md)
 
-## Route B (CHGNet) — `matbench_mp_e_form`
+## CHGNet Fine-tuning
 
-This repo includes a minimal, reproducible Route-B runner:
+This repo includes a minimal, reproducible runner:
 
 - Script: `scripts/run_chgnet_mp_e_form.py`
 - Config: `configs/chgnet_mp_e_form.yaml`
