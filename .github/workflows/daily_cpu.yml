@@ -1,4 +1,5 @@
 name: Daily Actions Smoke
+# Validated YAML for scheduled + manual smoke PR flow.
 
 on:
   schedule:
