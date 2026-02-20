@@ -138,6 +138,7 @@ def main() -> None:
 
     mb = MatbenchBenchmark(subset=[task_name], autoload=False)
     task = next(iter(mb.tasks))
+    task.load()
     
     folds = cfg_raw["task"].get("folds", "all")
     folds_to_run: List[str] = task.folds if folds == "all" else list(folds)
