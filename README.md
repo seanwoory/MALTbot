@@ -11,6 +11,7 @@ This repo includes a minimal, reproducible Route-B runner:
 - Script: `scripts/run_chgnet_mp_e_form.py`
 - Config: `configs/chgnet_mp_e_form.yaml`
 - Output: `results/daily/YYYY-MM-DD/<run_name>/results.json`
+- Colab notebook: [`notebooks/route_b_chgnet_matbench_mp_e_form_colab.ipynb`](notebooks/route_b_chgnet_matbench_mp_e_form_colab.ipynb)
 
 > Notes:
 > - The runner uses `matbench` `record()` scoring for official task metrics.
