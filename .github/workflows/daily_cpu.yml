@@ -28,7 +28,7 @@ jobs:
         run: |
           python -m pip install -U pip setuptools wheel
           pip install "numpy==1.26.4" "scipy==1.11.4" "scikit-learn==1.5.2"
-          pip install "matbench==0.6.5" matminer pymatgen pandas tqdm pyyaml
+          pip install "matbench==0.6" matminer pymatgen pandas tqdm pyyaml
 
       - name: Run CPU smoke (matbench_steels)
         run: |
