@@ -1,0 +1,21 @@
+{
+  "task": {
+    "name": "matbench_mp_e_form",
+    "scores": {
+      "mae": null
+    }
+  },
+  "model": {
+    "name": "Route-B CHGNet-lite (template artifact)",
+    "note": "Template only. Replace with real run output from scripts/run_chgnet_mp_e_form.py"
+  },
+  "hparams": {
+    "epochs": 40,
+    "batch_size": 64,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "hidden_dim": 256,
+    "dropout": 0.1
+  },
+  "seed": 42
+}

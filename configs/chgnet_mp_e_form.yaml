@@ -1,0 +1,23 @@
+seed: 42
+run_name: chgnet_mp_e_form_route_b
+output_root: results/daily
+
+task:
+  name: matbench_mp_e_form
+  folds: all # or list like ["fold_0"]
+
+features:
+  kind: composition_fraction
+  n_elements: 118
+
+training:
+  epochs: 40
+  batch_size: 64
+  lr: 0.001
+  weight_decay: 0.0001
+  hidden_dim: 256
+  dropout: 0.1
+
+runtime:
+  device: auto
+  num_workers: 0
