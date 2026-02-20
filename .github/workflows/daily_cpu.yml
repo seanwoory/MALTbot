@@ -43,6 +43,7 @@ jobs:
         run: |
           DATE=$(date +%F)
           OUT_DIR="results/daily/${DATE}/actions_smoke"
+
           if [ ! -f RESULTS.md ] || ! grep -q "DATE | TASK | MODEL" RESULTS.md; then
             printf "%s\n" \
               "# Results (Matbench v0.1)" \
@@ -51,75 +52,7 @@ jobs:
               "---|---|---|---:|---|---" \
               > RESULTS.md
           fi
-          LINE="${DATE} | actions_smoke | compileall | - | actions | ${OUT_DIR}/results.json"
-          grep -qF "$LINE" RESULTS.md || echo "$LINE" >> RESULTS.md
 
-      - name: Create PR
-        uses: peter-evans/create-pull-request@v6
-        with:
-          commit-message: "daily(actions): smoke ${{ github.run_id }}"
-          title: "daily(actions): smoke"
-          body: |
-            Automated daily repo smoke.
-            - compileall
-            - writes results/daily/.../actions_smoke/results.json
-            - appends one line to RESULTS.md
-          branch: "bot/daily-actions-smoke"
-          delete-branch: true
-EOFcat > .github/workflows/daily_cpu.yml << 'EOF'
-name: daily-cpu-smoke
-
-on:
-  schedule:
-    - cron: "0 23 * * *"   # KST 08:00
-  workflow_dispatch: {}
-
-permissions:
-  contents: write
-  pull-requests: write
-
-jobs:
-  cpu_smoke:
-    runs-on: ubuntu-latest
-    timeout-minutes: 20
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.11"
-
-      - name: Install minimal deps
-        run: |
-          python -m pip install -U pip setuptools wheel
-          pip install pyyaml tqdm
-
-      - name: Smoke: syntax check
-        run: |
-          python -m compileall -q .
-
-      - name: Write daily smoke artifact
-        run: |
-          DATE=$(date +%F)
-          OUT_DIR="results/daily/${DATE}/actions_smoke"
-          mkdir -p "${OUT_DIR}"
-          python -c "import json,sys,platform; json.dump({'python':sys.version,'platform':platform.platform()}, open('${OUT_DIR}/results.json','w'), indent=2)"
-
-      - name: Update RESULTS.md
-        run: |
-          DATE=$(date +%F)
-          OUT_DIR="results/daily/${DATE}/actions_smoke"
-          if [ ! -f RESULTS.md ] || ! grep -q "DATE | TASK | MODEL" RESULTS.md; then
-            printf "%s\n" \
-              "# Results (Matbench v0.1)" \
-              "" \
-              "DATE | TASK | MODEL | MAE(mean) | NOTES | ARTIFACT" \
-              "---|---|---|---:|---|---" \
-              > RESULTS.md
-          fi
           LINE="${DATE} | actions_smoke | compileall | - | actions | ${OUT_DIR}/results.json"
           grep -qF "$LINE" RESULTS.md || echo "$LINE" >> RESULTS.md
 
