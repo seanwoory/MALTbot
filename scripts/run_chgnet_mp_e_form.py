@@ -137,8 +137,13 @@ def main() -> None:
         device = torch.device(device_cfg)
 
     mb = MatbenchBenchmark(subset=[task_name], autoload=False)
-    task = mb.tasks[0]
-
+    # mb.tasks can be dict-like or dict_values depending on matbench version
+    try:
+      task = mb.tasks[0]  # older versions (list-like)
+    except TypeError:
+    # newer versions (dict/dict_values)
+      task = next(iter(mb.tasks.values())) if hasattr(mb.tasks, "values") else next(iter(mb.tasks))
+    
     folds = cfg_raw["task"].get("folds", "all")
     folds_to_run: List[str] = task.folds if folds == "all" else list(folds)
 
