@@ -1,0 +1,9 @@
+name: chgnet_lr_schedule
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet
+seed: 42
+model_config: chgnet_lr_schedule
+note: lr schedule experiment placeholder via base runner
+params:
+  lr: 0.0005

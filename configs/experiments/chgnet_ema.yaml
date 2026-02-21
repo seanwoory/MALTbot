@@ -1,0 +1,9 @@
+name: chgnet_ema
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet
+seed: 42
+model_config: chgnet_ema
+note: ema placeholder via base runner
+params:
+  ema: true

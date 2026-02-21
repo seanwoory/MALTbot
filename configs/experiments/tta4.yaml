@@ -1,0 +1,9 @@
+name: tta4
+enabled: false
+task: matbench_mp_e_form
+runner: chgnet_tta4
+seed: 42
+model_config: chgnet_tta4
+note: test-time augmentation x4 not implemented yet
+params:
+  tta_samples: 4

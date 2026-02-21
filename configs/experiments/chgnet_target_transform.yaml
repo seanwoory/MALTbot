@@ -1,0 +1,9 @@
+name: chgnet_target_transform
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet
+seed: 42
+model_config: chgnet_target_transform
+note: target transform placeholder via base runner
+params:
+  target_transform: log1p

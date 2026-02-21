@@ -1,0 +1,8 @@
+name: kgcnn_schnet
+enabled: false
+task: matbench_mp_e_form
+runner: kgcnn_schnet
+seed: 42
+model_config: kgcnn_schnet
+note: not implemented yet
+params: {}

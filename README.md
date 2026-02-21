@@ -8,10 +8,11 @@
 
 ## CHGNet finetune track (`matbench_mp_e_form`)
 
-- Runner: `scripts/run_chgnet_mp_e_form.py`
-- Config: `configs/chgnet_mp_e_form.yaml`
-- Canonical notebook: `notebooks/MALTbot_2.ipynb`
-- Results artifact: `results/daily/YYYY-MM-DD/<run_name>/results.json`
+- Canonical notebook (batch): `notebooks/MALTbot_2.ipynb`
+- Experiment registry: `configs/experiments/*.yaml`
+- Batch runner: `scripts/run_experiment.py`
+- Base CHGNet config: `configs/chgnet_mp_e_form.yaml`
+- Results artifact: `results/daily/<DATE>/<BATCH_RUN_NAME>/<exp_name>/results.json`
 - Daily summary log: `RESULTS.md`
 
 ## Daily progress (auto-updated)

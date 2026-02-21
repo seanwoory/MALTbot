@@ -1,0 +1,9 @@
+name: ensemble_3seed
+enabled: false
+task: matbench_mp_e_form
+runner: ensemble_3seed
+seed: 42
+model_config: ensemble_3seed
+note: pipeline not implemented yet
+params:
+  seeds: [41, 42, 43]

@@ -12,6 +12,7 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -76,23 +77,16 @@ def structures_to_matrix(structures: Iterable[Structure], n_elements: int = 118)
     return np.stack([structure_to_vec(s, n_elements=n_elements) for s in structures], axis=0)
 
 
-def _ensure_series(obj):
-    try:
-        import pandas as pd  # noqa: F401
-
-        return obj
-    except Exception:
-        return obj
-
-
 def fit_and_predict(
     x_train: np.ndarray,
     y_train: np.ndarray,
     x_test: np.ndarray,
     cfg: TrainConfig,
     device: torch.device,
-) -> np.ndarray:
+) -> tuple[np.ndarray, int]:
     model = MLPRegressor(in_dim=x_train.shape[1], hidden_dim=cfg.hidden_dim, dropout=cfg.dropout).to(device)
+    num_params = sum(p.numel() for p in model.parameters())
+
     criterion = nn.L1Loss()
     optimizer = optim.AdamW(model.parameters(), lr=cfg.lr, weight_decay=cfg.weight_decay)
 
@@ -113,13 +107,15 @@ def fit_and_predict(
     model.eval()
     with torch.no_grad():
         preds = model(torch.from_numpy(x_test).to(device)).cpu().numpy().astype(float)
-    return preds
+    return preds, int(num_params)
 
 
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/chgnet_mp_e_form.yaml")
     args = ap.parse_args()
+
+    t0 = time.perf_counter()
 
     cfg_raw = yaml.safe_load(Path(args.config).read_text())
     seed = int(cfg_raw["seed"])
@@ -139,9 +135,12 @@ def main() -> None:
     mb = MatbenchBenchmark(subset=[task_name], autoload=False)
     task = next(iter(mb.tasks))
     task.load()
-    
+
     folds = cfg_raw["task"].get("folds", "all")
     folds_to_run: List[str] = task.folds if folds == "all" else list(folds)
+
+    dataset_size: dict[str, dict[str, int]] = {}
+    model_num_params: int | None = None
 
     for fold in folds_to_run:
         train_inputs, train_targets = task.get_train_and_val_data(fold)
@@ -151,7 +150,13 @@ def main() -> None:
         y_train = np.asarray(train_targets, dtype=np.float32)
         x_test = structures_to_matrix(test_inputs, n_elements=n_elements)
 
-        preds = fit_and_predict(x_train, y_train, x_test, tcfg, device)
+        dataset_size[fold] = {
+            "train_val": int(len(train_inputs)),
+            "test": int(len(test_inputs)),
+        }
+
+        preds, n_params = fit_and_predict(x_train, y_train, x_test, tcfg, device)
+        model_num_params = n_params if model_num_params is None else model_num_params
         task.record(fold, preds.tolist())
 
     date_str = datetime.now().astimezone().strftime("%Y-%m-%d")
@@ -171,10 +176,15 @@ def main() -> None:
         },
         "hparams": cfg_raw["training"],
         "seed": seed,
+        "num_params": model_num_params,
+        "dataset_size": dataset_size,
+        "train_wall_time_sec": round(time.perf_counter() - t0, 3),
         "runtime": {
             "device": str(device),
             "python": __import__("sys").version,
             "torch": torch.__version__,
+            "cuda_available": bool(torch.cuda.is_available()),
+            "gpu_type": torch.cuda.get_device_name(0) if torch.cuda.is_available() else None,
         },
     }
 

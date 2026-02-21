@@ -1,0 +1,8 @@
+name: alignn_baseline
+enabled: false
+task: matbench_mp_e_form
+runner: alignn
+seed: 42
+model_config: alignn_baseline
+note: not implemented yet
+params: {}

@@ -1,0 +1,8 @@
+name: baseline_chgnet
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet
+seed: 42
+model_config: chgnet_baseline
+note: baseline chgnet run
+params: {}
