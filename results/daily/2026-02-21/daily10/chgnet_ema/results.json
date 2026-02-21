@@ -1,0 +1,34 @@
+{
+  "experiment": "chgnet_ema",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "success",
+  "metric": null,
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 527.67,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_ema",
+  "note": "ema placeholder via base runner",
+  "exp_config_path": "configs/experiments/chgnet_ema.yaml",
+  "output_path": "results/daily/2026-02-21/daily10/chgnet_ema/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "1dfbaef1e54f77f85dbf8aa9af9703c672c9f4fe",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA H100 80GB HBM3"
+  },
+  "run": {
+    "returncode": 0,
+    "stdout_tail": "2026-02-21 02:23:49 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-21 02:23:49 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-21 02:25:35 INFO     Dataset 'matbench_mp_e_form loaded.\n2026-02-21 02:26:58 INFO     Recorded fold matbench_mp_e_form-0 successfully.\n2026-02-21 02:28:21 INFO     Recorded fold matbench_mp_e_form-1 successfully.\n2026-02-21 02:29:44 INFO     Recorded fold matbench_mp_e_form-2 successfully.\n2026-02-21 02:31:07 INFO     Recorded fold matbench_mp_e_form-3 successfully.\n2026-02-21 02:32:32 INFO     Recorded fold matbench_mp_e_form-4 successfully.\nWrote: results/daily/2026-02-21/daily10/2026-02-21/chgnet_ema/results.json",
+    "stderr_tail": ""
+  }
+}
