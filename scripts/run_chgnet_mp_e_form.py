@@ -137,8 +137,9 @@ def main() -> None:
         device = torch.device(device_cfg)
 
     mb = MatbenchBenchmark(subset=[task_name], autoload=False)
-    task = mb.tasks[0]
-
+    task = next(iter(mb.tasks))
+    task.load()
+    
     folds = cfg_raw["task"].get("folds", "all")
     folds_to_run: List[str] = task.folds if folds == "all" else list(folds)
 
