@@ -1,0 +1,75 @@
+{
+  "task": {
+    "name": "matbench_mp_e_form",
+    "scores": {
+      "mae": {
+        "mean": 0.11121879079920674,
+        "max": 0.11632489696818617,
+        "min": 0.10836317670375065,
+        "std": 0.003338656208037342
+      },
+      "rmse": {
+        "mean": 0.2791152202138897,
+        "max": 0.28906179089267253,
+        "min": 0.27172329459474537,
+        "std": 0.006599641937076819
+      },
+      "mape": {
+        "mean": 0.6931399800870328,
+        "max": 0.8886945584406597,
+        "min": 0.5577619845299959,
+        "std": 0.14239291646672897
+      },
+      "max_error": {
+        "mean": 4.97432679306014,
+        "max": 6.2769600708353686,
+        "min": 3.892478056754778,
+        "std": 1.0233674491440412
+      }
+    }
+  },
+  "model": {
+    "name": "Route-B CHGNet-lite (composition MLP baseline)",
+    "note": "Minimal reproducible baseline. Replace with full CHGNet finetune for final Route-B."
+  },
+  "hparams": {
+    "epochs": 40,
+    "batch_size": 64,
+    "lr": 0.001,
+    "weight_decay": 0.0001,
+    "hidden_dim": 256,
+    "dropout": 0.1
+  },
+  "seed": 42,
+  "num_params": 63489,
+  "dataset_size": {
+    "0": {
+      "train_val": 106201,
+      "test": 26551
+    },
+    "1": {
+      "train_val": 106201,
+      "test": 26551
+    },
+    "2": {
+      "train_val": 106202,
+      "test": 26550
+    },
+    "3": {
+      "train_val": 106202,
+      "test": 26550
+    },
+    "4": {
+      "train_val": 106202,
+      "test": 26550
+    }
+  },
+  "train_wall_time_sec": 522.887,
+  "runtime": {
+    "device": "cuda",
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA H100 80GB HBM3"
+  }
+}

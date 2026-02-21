@@ -1,0 +1,30 @@
+{
+  "experiment": "tta4",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "skipped",
+  "metric": "SKIPPED",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": null,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_tta4",
+  "note": "test-time augmentation x4 not implemented yet",
+  "exp_config_path": "configs/experiments/tta4.yaml",
+  "output_path": "results/daily/2026-02-21/daily10/tta4/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "1dfbaef1e54f77f85dbf8aa9af9703c672c9f4fe",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA H100 80GB HBM3"
+  },
+  "error_message": "Experiment disabled in YAML (enabled: false)."
+}
