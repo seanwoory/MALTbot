@@ -24,8 +24,14 @@ Canonical notebook: `notebooks/MALTbot_2.ipynb`
 - Disabled / not-implemented experiments are logged as `status=skipped` and `METRIC=SKIPPED`
 
 ## Git push behavior
-- Branch: `colab/<DATE>/<BATCH_RUN_NAME>`
+- Branch: `colab-<DATE>-<BATCH_RUN_NAME>` (slash-free)
 - Never pushes to `main`
 - Uses `GH_TOKEN` from `google.colab.userdata.get('GH_TOKEN')`
 - Fallback: hidden prompt (`getpass`) if secret is missing
 - Token is never printed
+
+For branch watchers, query prefix as `colab-<DATE>-` (example: `branches/all?query=colab-2026-02-21-`).
+
+If push fails (auth/network), rerun the token cell first, then rerun preflight + push cells.
+
+Backward compatibility: old branches like `colab/<DATE>/<BATCH>` may still exist. If needed, open PR manually from GitHub UI (branch selector) or URL-encode slashes in compare links.
