@@ -1,4 +1,4 @@
-# MALTbot
+# MALTbot🦞
 
 ## Documentation
 
