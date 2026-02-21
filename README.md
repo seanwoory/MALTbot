@@ -3,43 +3,28 @@
 ## Documentation
 
 - [Matbench Ops Rules](docs/MATBENCH_OPS.md)
-- [Colab notebook: CHGNet finetune track (`matbench_mp_e_form`)](notebooks/route_b_chgnet_matbench_mp_e_form_colab.ipynb)
+- [Daily Colab Run](docs/colab.md)
+- [Progress Plot Automation](docs/progress.md)
 
 ## CHGNet finetune track (`matbench_mp_e_form`)
 
-Minimal, reproducible experiment scaffold for Matbench v0.1:
-
 - Runner: `scripts/run_chgnet_mp_e_form.py`
 - Config: `configs/chgnet_mp_e_form.yaml`
-- Output artifact: `results/daily/YYYY-MM-DD/<run_name>/results.json`
-- Scoring: `matbench` `record()` API (`task.scores` written to results JSON)
+- Canonical notebook: `notebooks/MALTbot_2.ipynb`
+- Results artifact: `results/daily/YYYY-MM-DD/<run_name>/results.json`
+- Daily summary log: `RESULTS.md`
 
-## Quick run (Colab)
+## Daily progress (auto-updated)
 
-Use the notebook above and run all cells.
+`RESULTS.md` and `results/daily/*/results.json` are parsed to regenerate these charts.
+Dashed lines are Top-1..Top-5 leaderboard references.
 
-It handles:
-- GPU check
-- clone/pull (rerun-safe)
-- pinned dependency install (Colab Python 3.12)
-- Drive mount
-- training/evaluation run
-- result discovery
-- PR-only branch commit/push using `GH_TOKEN` from Colab Secrets
+### `matbench_mp_e_form`
 
-## PR-only results update (CLI)
+![Progress: matbench_mp_e_form](docs/assets/progress_matbench_mp_e_form.svg)
 
-```bash
-python scripts/run_chgnet_mp_e_form.py --config configs/chgnet_mp_e_form.yaml
+### `matbench_mp_gap`
 
-DATE_KST="$(TZ=Asia/Seoul date +%Y%m%d)"
-RUN_TAG="chgnet-mp-e-form"
-BRANCH="bot/${DATE_KST}-${RUN_TAG}"
+![Progress: matbench_mp_gap](docs/assets/progress_matbench_mp_gap.svg)
 
-git checkout -B "${BRANCH}"
-git add RESULTS.md results/daily/**
-git commit -m "results: ${RUN_TAG} ${DATE_KST}"
-git push -u origin "${BRANCH}"
-```
-
-Do not push directly to `main`; open a PR from the branch.
+`notebooks/route_b_chgnet_matbench_mp_e_form_colab.ipynb` is kept as a compatibility pointer to `MALTbot_2.ipynb`.
