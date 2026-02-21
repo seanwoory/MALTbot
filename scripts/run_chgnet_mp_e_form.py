@@ -2,9 +2,7 @@
 """Route-B baseline runner for matbench_mp_e_form.
 
 - Uses matbench record() API for official scoring.
-- Provides a minimal PyTorch regression pipeline on composition features.
-- Script name keeps Route-B intent for CHGNet finetuning, while remaining
-  lightweight/reproducible in Colab.
+- Computes explicit per-fold/aggregate MAE for stable downstream logging.
 """
 
 from __future__ import annotations
@@ -110,6 +108,17 @@ def fit_and_predict(
     return preds, int(num_params)
 
 
+def resolve_out_dir(cfg_raw: dict) -> Path:
+    # Canonical preferred: results/daily/<DATE>/<BATCH>/<RUN_NAME>
+    date_str = cfg_raw.get("date") or datetime.now().astimezone().strftime("%Y-%m-%d")
+    run_name = cfg_raw.get("run_name", "chgnet_mp_e_form_route_b")
+    out_root = Path(cfg_raw.get("output_root", "results/daily"))
+
+    # If output_root already includes date/batch, avoid re-appending date accidentally.
+    # We standardize by always creating out_root/date/run_name.
+    return out_root / date_str / run_name
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/chgnet_mp_e_form.yaml")
@@ -123,14 +132,10 @@ def main() -> None:
 
     task_name = cfg_raw["task"]["name"]
     n_elements = int(cfg_raw["features"].get("n_elements", 118))
-
     tcfg = TrainConfig(**cfg_raw["training"])
 
     device_cfg = cfg_raw["runtime"].get("device", "auto")
-    if device_cfg == "auto":
-        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    else:
-        device = torch.device(device_cfg)
+    device = torch.device("cuda" if (device_cfg == "auto" and torch.cuda.is_available()) else device_cfg if device_cfg != "auto" else "cpu")
 
     mb = MatbenchBenchmark(subset=[task_name], autoload=False)
     task = next(iter(mb.tasks))
@@ -140,6 +145,7 @@ def main() -> None:
     folds_to_run: List[str] = task.folds if folds == "all" else list(folds)
 
     dataset_size: dict[str, dict[str, int]] = {}
+    fold_mae: dict[str, float] = {}
     model_num_params: int | None = None
 
     for fold in folds_to_run:
@@ -150,25 +156,55 @@ def main() -> None:
         y_train = np.asarray(train_targets, dtype=np.float32)
         x_test = structures_to_matrix(test_inputs, n_elements=n_elements)
 
-        dataset_size[fold] = {
-            "train_val": int(len(train_inputs)),
-            "test": int(len(test_inputs)),
-        }
+        dataset_size[fold] = {"train_val": int(len(train_inputs)), "test": int(len(test_inputs))}
 
         preds, n_params = fit_and_predict(x_train, y_train, x_test, tcfg, device)
         model_num_params = n_params if model_num_params is None else model_num_params
         task.record(fold, preds.tolist())
 
-    date_str = datetime.now().astimezone().strftime("%Y-%m-%d")
-    run_name = cfg_raw.get("run_name", "chgnet_mp_e_form_route_b")
-    out_root = Path(cfg_raw.get("output_root", "results/daily"))
-    out_dir = out_root / date_str / run_name
+        # Best-effort fold MAE using available labels (if provided by local matbench data).
+        try:
+            _, y_test = task.get_test_data(fold, include_target=True)
+            y_true = np.asarray(y_test, dtype=np.float32)
+            if len(y_true) == len(preds):
+                fold_mae[fold] = float(np.mean(np.abs(preds - y_true)))
+        except Exception:
+            pass
+
+    out_dir = resolve_out_dir(cfg_raw)
     out_dir.mkdir(parents=True, exist_ok=True)
+
+    if fold_mae:
+        mean_mae = float(np.mean(list(fold_mae.values())))
+        std_mae = float(np.std(list(fold_mae.values()))) if len(fold_mae) > 1 else 0.0
+    else:
+        mean_mae = None
+        std_mae = None
+
+    # Keep raw task.scores for compatibility, but provide explicit MAE structure.
+    task_scores_raw = None
+    try:
+        task_scores_raw = task.scores
+    except Exception:
+        pass
 
     result = {
         "task": {
             "name": task_name,
-            "scores": task.scores,
+            "scores": {
+                "mae_mean": mean_mae,
+                "mae_std": std_mae,
+                "fold_mae": fold_mae or None,
+                "raw": task_scores_raw,
+            },
+        },
+        "metrics": {
+            "metric_name": "MAE",
+            "metric_value": mean_mae,
+            "metric_unit": "eV/atom" if task_name == "matbench_mp_e_form" else "eV",
+            "fold_scores": fold_mae or None,
+            "mean": mean_mae,
+            "std": std_mae,
         },
         "model": {
             "name": "Route-B CHGNet-lite (composition MLP baseline)",
@@ -191,6 +227,10 @@ def main() -> None:
     out_file = out_dir / "results.json"
     out_file.write_text(json.dumps(result, indent=2, ensure_ascii=False, default=str), encoding="utf-8")
     print(f"Wrote: {out_file}")
+    if mean_mae is not None:
+        print(f"FINAL_METRIC_MAE={mean_mae:.6f}")
+    else:
+        print("FINAL_METRIC_MAE=NA")
 
 
 if __name__ == "__main__":

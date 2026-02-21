@@ -20,6 +20,7 @@ Canonical notebook: `notebooks/MALTbot_2.ipynb`
 - Each experiment writes:
   - `results/daily/<DATE>/<BATCH_RUN_NAME>/<exp_name>/results.json`
 - Each experiment appends one line to `RESULTS.md`
+- Successful runs write numeric MAE (`metric_value`) using explicit fold MAE aggregation and/or `FINAL_METRIC_MAE` marker fallback.
 - Disabled / not-implemented experiments are logged as `status=skipped` and `METRIC=SKIPPED`
 
 ## Git push behavior
