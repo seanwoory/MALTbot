@@ -241,6 +241,7 @@ def main() -> None:
         "chgnet_ensemble3",
         "mlp_pretrained_infer_fallback",
         "mlp_head_finetune_freeze",
+        "chgnet_structure",
         # Reserved names for future true CHGNet implementations:
         "chgnet_pretrained_infer",
         "chgnet_head_finetune_freeze",
@@ -308,12 +309,25 @@ def main() -> None:
             base_cfg.setdefault("task", {})["folds"] = ["fold_0"]
             payload["status"] = "partial"
 
-    if runner in {"chgnet_pretrained_infer", "chgnet_head_finetune_freeze"}:
-        payload["status"] = "skipped"
-        payload["metric"] = "SKIPPED"
-        payload["error_message"] = f"Runner '{runner}' is reserved for true CHGNet implementation and currently disabled."
-        finish_and_log(payload, date, task, model_config, note, out_file)
-        return
+    target_script = "scripts/run_chgnet_mp_e_form.py"
+    if runner in {"chgnet_structure", "chgnet_pretrained_infer", "chgnet_head_finetune_freeze", "chgnet_ensemble3"}:
+        target_script = "scripts/run_chgnet_structure.py"
+
+    if runner == "chgnet_pretrained_infer":
+        tr["epochs"] = 0
+        extras["mode"] = "pretrained"
+
+    if runner == "chgnet_head_finetune_freeze":
+        extras["freeze_backbone"] = True
+        tr["epochs"] = int(params.get("epochs", 10))
+        tr["lr"] = float(params.get("lr", 1e-3))
+
+    if runner == "chgnet_ensemble3":
+        extras["ensemble_seeds"] = params.get("seeds", [42, 43, 44])
+        tr["epochs"] = int(params.get("epochs", 20))
+        # Map specific params for structure runner
+        if "freeze_backbone" in params:
+            extras["freeze_backbone"] = bool(params["freeze_backbone"])
 
     with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as tf:
         yaml.safe_dump(base_cfg, tf, sort_keys=False)
@@ -323,7 +337,7 @@ def main() -> None:
     stdout = ""
     try:
         proc = subprocess.run(
-            [sys.executable, "scripts/run_chgnet_mp_e_form.py", "--config", temp_cfg],
+            [sys.executable, target_script, "--config", temp_cfg],
             cwd=REPO,
             text=True,
             capture_output=True,

@@ -1,0 +1,11 @@
+name: chgnet_full_finetune
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet_structure
+seed: 42
+model_config: chgnet_full_finetune
+note: Full CHGNet structure finetuning
+params:
+  epochs: 20
+  lr: 1e-4
+  freeze_backbone: false
