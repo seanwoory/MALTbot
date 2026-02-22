@@ -1,8 +1,11 @@
 name: chgnet_head_finetune_freeze
-enabled: false
+enabled: true
 task: matbench_mp_e_form
-runner: chgnet_head_finetune_freeze
+runner: chgnet_structure
 seed: 42
 model_config: chgnet_head_finetune_freeze
-note: RESERVED for true CHGNet head-only finetune (not implemented yet)
-params: {}
+note: CHGNet frozen backbone finetuning (Readout + AtomRef only)
+params:
+  epochs: 10
+  lr: 1e-3
+  freeze_backbone: true

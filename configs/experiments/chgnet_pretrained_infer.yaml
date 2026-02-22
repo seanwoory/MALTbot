@@ -1,8 +1,10 @@
 name: chgnet_pretrained_infer
-enabled: false
+enabled: true
 task: matbench_mp_e_form
-runner: chgnet_pretrained_infer
+runner: chgnet_structure
 seed: 42
 model_config: chgnet_pretrained_infer
-note: RESERVED for true CHGNet pretrained inference (not implemented yet)
-params: {}
+note: Zero-shot pretrained CHGNet inference
+params:
+  epochs: 0
+  mode: pretrained

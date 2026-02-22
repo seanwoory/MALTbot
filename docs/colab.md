@@ -19,12 +19,12 @@ Canonical notebook: `notebooks/MALTbot_2.ipynb`
 Example experiment list: `baseline_chgnet`, `mlp_pretrained_infer_fallback`, `mlp_head_finetune_freeze`, `chgnet_ensemble3`, `chgnet_seed43`, `chgnet_seed44`, `chgnet_lr_schedule`, `chgnet_target_transform`, `chgnet_ema`, `chgnet_epochs80_seed43`.
 
 Expected runtime (GPU, rough):
-- `baseline_chgnet`: medium
-- `mlp_pretrained_infer_fallback`: short-medium (MLP fallback, NOT CHGNet pretrained)
-- `mlp_head_finetune_freeze`: short (partial fold0 quick gate, MLP)
-- `chgnet_ensemble3`: long (3-seed averaging)
-
-Naming policy: `chgnet_pretrained_infer`, `chgnet_head_finetune_freeze` are reserved for future true-CHGNet implementations and are currently disabled.
+- `chgnet_pretrained_infer`: short (zero-shot inference)
+- `chgnet_head_finetune_freeze`: medium (frozen backbone, 10 epochs)
+- `chgnet_full_finetune`: long (full finetuning, 20 epochs)
+- `chgnet_ensemble3`: very long (3-seed averaging)
+- `mlp_pretrained_infer_fallback`: short-medium (MLP fallback, NOT CHGNet)
+- `mlp_head_finetune_freeze`: short (MLP fallback, NOT CHGNet)
 
 ## Output behavior
 - Each experiment writes:
