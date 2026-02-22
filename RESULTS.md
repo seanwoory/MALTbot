@@ -12,4 +12,4 @@
 2026-02-21 | matbench_mp_e_form | kgcnn_schnet | METRIC=SKIPPED | not implemented yet | results/daily/2026-02-21/daily10/kgcnn_schnet/results.json
 2026-02-21 | matbench_mp_e_form | kgcnn_dimenetpp | METRIC=SKIPPED | not implemented yet | results/daily/2026-02-21/daily10/kgcnn_dimenetpp/results.json
 2026-02-21 | matbench_mp_e_form | ensemble_3seed | METRIC=SKIPPED | pipeline not implemented yet | results/daily/2026-02-21/daily10/ensemble_3seed/results.json
-2026-02-21 | matbench_mp_e_form | chgnet_tta4 | METRIC=SKIPPED | test-time augmentation x4 not implemented yet | results/daily/2026-02-21/daily10/tta4/results.json
+2026-02-21 | matbench_mp_e_form | chgnet_tta4 | METRIC=SKIPPED | test-time augmentation x4 not implemented yet | results/daily/2026-02-21/daily10/tta4/results.json- 2026-02-22: results/daily/2026-02-22/actions_smoke/results.json
