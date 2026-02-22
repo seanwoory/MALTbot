@@ -1,0 +1,10 @@
+name: chgnet_ensemble3
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet_ensemble3
+seed: 42
+model_config: chgnet_ensemble3
+note: 3-seed ensemble average predictions
+params:
+  seeds: [42, 43, 44]
+  base_runner: chgnet

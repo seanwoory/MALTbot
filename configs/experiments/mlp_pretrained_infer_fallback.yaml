@@ -1,0 +1,9 @@
+name: mlp_pretrained_infer_fallback
+enabled: true
+task: matbench_mp_e_form
+runner: mlp_pretrained_infer_fallback
+seed: 42
+model_config: mlp_pretrained_infer_fallback
+note: MLP fallback inference-first baseline (NOT CHGNet)
+params:
+  fallback_epochs: 20

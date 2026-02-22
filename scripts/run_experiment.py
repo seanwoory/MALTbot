@@ -117,6 +117,7 @@ def base_payload(exp_name: str, task: str, seed: int, model_config: str, note: s
         "model_config": model_config,
         "note": note,
         "exp_config_path": str(exp_path.relative_to(REPO)),
+        "exp_params": {},
         "output_path": str(out_file.relative_to(REPO)),
         "env": {
             "python": sys.version,
@@ -224,6 +225,7 @@ def main() -> None:
 
     out_file = REPO / "results" / "daily" / date / batch / exp_name / "results.json"
     payload = base_payload(exp_name, task, seed, model_config, note, exp_path, out_file)
+    payload["exp_params"] = exp.get("params") or {}
 
     if not enabled:
         payload["status"] = "skipped"
@@ -232,7 +234,18 @@ def main() -> None:
         finish_and_log(payload, date, task, model_config, note, out_file)
         return
 
-    if runner != "chgnet":
+    supported_runners = {
+        "chgnet",
+        "chgnet_tta4",
+        "ensemble_3seed",
+        "chgnet_ensemble3",
+        "mlp_pretrained_infer_fallback",
+        "mlp_head_finetune_freeze",
+        # Reserved names for future true CHGNet implementations:
+        "chgnet_pretrained_infer",
+        "chgnet_head_finetune_freeze",
+    }
+    if runner not in supported_runners:
         payload["status"] = "skipped"
         payload["metric"] = "SKIPPED"
         payload["error_message"] = f"Runner '{runner}' not implemented yet."
@@ -245,6 +258,62 @@ def main() -> None:
     base_cfg["date"] = date
     base_cfg["output_root"] = "results/daily"
     base_cfg.setdefault("task", {})["name"] = task
+
+    # Apply experiment-specific levers from YAML params.
+    params = exp.get("params") or {}
+    tr = base_cfg.setdefault("training", {})
+    extras = base_cfg.setdefault("training_extras", {})
+    if "lr" in params:
+        tr["lr"] = float(params["lr"])
+    if "epochs" in params:
+        tr["epochs"] = int(params["epochs"])
+    if "weight_decay" in params:
+        tr["weight_decay"] = float(params["weight_decay"])
+    if "target_transform" in params:
+        extras["target_transform"] = str(params["target_transform"])
+    if "scheduler" in params:
+        extras["scheduler"] = str(params["scheduler"])
+    if "step_size" in params:
+        extras["step_size"] = int(params["step_size"])
+    if "gamma" in params:
+        extras["gamma"] = float(params["gamma"])
+    if "ema" in params:
+        extras["ema"] = bool(params["ema"])
+    if "ema_decay" in params:
+        extras["ema_decay"] = float(params["ema_decay"])
+    if "tta_samples" in params:
+        extras["tta_samples"] = int(params["tta_samples"])
+    if "tta_noise_std" in params:
+        extras["tta_noise_std"] = float(params["tta_noise_std"])
+
+    if "seeds" in params and isinstance(params["seeds"], list):
+        extras["ensemble_seeds"] = [int(s) for s in params["seeds"]]
+
+    if runner == "chgnet_tta4":
+        extras.setdefault("tta_samples", 4)
+        extras.setdefault("tta_noise_std", 0.01)
+
+    if runner in {"ensemble_3seed", "chgnet_ensemble3"}:
+        extras.setdefault("ensemble_seeds", [41, 42, 43])
+
+    if runner == "mlp_pretrained_infer_fallback":
+        # Explicitly MLP fallback (not true CHGNet pretrained inference).
+        tr["epochs"] = int(params.get("fallback_epochs", 20))
+        extras.setdefault("mode", "mlp_pretrained_infer_fallback")
+
+    if runner == "mlp_head_finetune_freeze":
+        extras["freeze_backbone"] = True
+        tr["epochs"] = int(params.get("epochs", tr.get("epochs", 30)))
+        if bool(params.get("partial_fold0_only", True)):
+            base_cfg.setdefault("task", {})["folds"] = ["fold_0"]
+            payload["status"] = "partial"
+
+    if runner in {"chgnet_pretrained_infer", "chgnet_head_finetune_freeze"}:
+        payload["status"] = "skipped"
+        payload["metric"] = "SKIPPED"
+        payload["error_message"] = f"Runner '{runner}' is reserved for true CHGNet implementation and currently disabled."
+        finish_and_log(payload, date, task, model_config, note, out_file)
+        return
 
     with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as tf:
         yaml.safe_dump(base_cfg, tf, sort_keys=False)

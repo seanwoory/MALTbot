@@ -4,6 +4,7 @@ task: matbench_mp_e_form
 runner: chgnet
 seed: 42
 model_config: chgnet_ema
-note: ema placeholder via base runner
+note: ema-smoothed weights variant
 params:
   ema: true
+  ema_decay: 0.995

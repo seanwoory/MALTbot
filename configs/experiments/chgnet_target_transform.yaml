@@ -4,6 +4,6 @@ task: matbench_mp_e_form
 runner: chgnet
 seed: 42
 model_config: chgnet_target_transform
-note: target transform placeholder via base runner
+note: apply target standardization
 params:
-  target_transform: log1p
+  target_transform: standardize

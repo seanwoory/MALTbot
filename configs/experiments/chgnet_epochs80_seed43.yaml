@@ -1,0 +1,9 @@
+name: chgnet_epochs80_seed43
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet
+seed: 43
+model_config: chgnet_epochs80_seed43
+note: longer training 80 epochs (seed43)
+params:
+  epochs: 80

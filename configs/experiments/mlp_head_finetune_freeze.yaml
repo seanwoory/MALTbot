@@ -1,0 +1,11 @@
+name: mlp_head_finetune_freeze
+enabled: true
+task: matbench_mp_e_form
+runner: mlp_head_finetune_freeze
+seed: 42
+model_config: mlp_head_finetune_freeze
+note: MLP head-only quick run (NOT CHGNet)
+params:
+  epochs: 30
+  freeze_backbone: true
+  partial_fold0_only: true

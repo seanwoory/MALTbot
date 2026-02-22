@@ -9,7 +9,20 @@
 
 ---
 
-## 1) Daily PR 규격 (최소 세트)
+## 1) Quality Gate (강제)
+Colab에서 GPU 시간을 태우는 변경(노트북/설치/푸시/로깅/런너)은 아래를 **반드시** 통과해야 한다.
+1) 로컬/CI에서 최소 문법 검증: `python -m compileall` 통과
+2) Colab end-to-end 스모크(최소 1-run): `baseline_chgnet` 1회 실행으로 아래가 모두 만족
+   - `results/daily/YYYY-MM-DD/<batch>/<exp>/results.json` 생성
+   - `results.json`에 numeric `metric_value` 저장
+   - `RESULTS.md`에 `METRIC=<float>`로 1줄 append
+   - push 성공(브랜치 생성) + PR 링크가 정상적으로 열림
+
+실행 중 버그를 발견하면:
+- 즉시 패치하고(코드는 coder),
+- 다시 위 스모크를 통과한 뒤에만 추가 실험을 진행한다.
+
+## 2) Daily PR 규격 (최소 세트)
 매일 PR(또는 daily 결과 반영)은 아래 3종을 기준으로 한다.
 
 ### (A1) 결과 아티팩트(작게)

@@ -16,6 +16,16 @@ Canonical notebook: `notebooks/MALTbot_2.ipynb`
    - `GH_PUSH`
 3. Run all cells
 
+Example experiment list: `baseline_chgnet`, `mlp_pretrained_infer_fallback`, `mlp_head_finetune_freeze`, `chgnet_ensemble3`, `chgnet_seed43`, `chgnet_seed44`, `chgnet_lr_schedule`, `chgnet_target_transform`, `chgnet_ema`, `chgnet_epochs80_seed43`.
+
+Expected runtime (GPU, rough):
+- `baseline_chgnet`: medium
+- `mlp_pretrained_infer_fallback`: short-medium (MLP fallback, NOT CHGNet pretrained)
+- `mlp_head_finetune_freeze`: short (partial fold0 quick gate, MLP)
+- `chgnet_ensemble3`: long (3-seed averaging)
+
+Naming policy: `chgnet_pretrained_infer`, `chgnet_head_finetune_freeze` are reserved for future true-CHGNet implementations and are currently disabled.
+
 ## Output behavior
 - Each experiment writes:
   - `results/daily/<DATE>/<BATCH_RUN_NAME>/<exp_name>/results.json`

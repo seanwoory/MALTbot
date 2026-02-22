@@ -1,0 +1,8 @@
+name: chgnet_seed44
+enabled: true
+task: matbench_mp_e_form
+runner: chgnet
+seed: 44
+model_config: chgnet_seed44
+note: baseline seed44 variant
+params: {}

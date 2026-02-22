@@ -1,0 +1,8 @@
+name: chgnet_head_finetune_freeze
+enabled: false
+task: matbench_mp_e_form
+runner: chgnet_head_finetune_freeze
+seed: 42
+model_config: chgnet_head_finetune_freeze
+note: RESERVED for true CHGNet head-only finetune (not implemented yet)
+params: {}
