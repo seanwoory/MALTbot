@@ -1,0 +1,41 @@
+{
+  "experiment": "chgnet_full_finetune",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 190.078,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_full_finetune",
+  "note": "Full CHGNet structure finetuning",
+  "exp_config_path": "configs/experiments/chgnet_full_finetune.yaml",
+  "exp_params": {
+    "epochs": 20,
+    "lr": "1e-4",
+    "freeze_backbone": false
+  },
+  "output_path": "results/daily/2026-02-23/daily10/chgnet_full_finetune/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "f4ecc76eb9b1c4885bf5ee87e3a2944ac07ffcdd",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA L4"
+  },
+  "run": {
+    "returncode": 1,
+    "stdout_tail": "Error: chgnet not installed. Please install chgnet to use this runner.\nUsing device: cuda\n2026-02-23 13:36:59 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-23 13:36:59 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-23 13:39:59 INFO     Dataset 'matbench_mp_e_form loaded.\n\n--- Starting Fold: 0 ---",
+    "stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 265, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 215, in main\n    preds = fit_and_predict(train_inputs, train_targets, test_inputs, tcfg, device)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 79, in fit_and_predict\n    model = CHGNet.load()\n            ^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'load'"
+  },
+  "error_message": "runner exited with code 1",
+  "traceback_or_stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 265, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 215, in main\n    preds = fit_and_predict(train_inputs, train_targets, test_inputs, tcfg, device)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 79, in fit_and_predict\n    model = CHGNet.load()\n            ^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'load'"
+}
