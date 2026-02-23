@@ -16,6 +16,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import List, Optional, Any
+import inspect
 
 import numpy as np
 import torch
@@ -50,7 +51,72 @@ class MatbenchStructureDataset(Dataset):
         self.converter = model.graph_converter
         # Cache graphs to speed up training
         print(f"Converting {len(structures)} structures to graphs...")
-        self.graphs = [self.converter(s) for s in structures]
+        self.graphs = []
+        self.adaptive_cutoff_count = 0
+
+        for idx, s in enumerate(structures):
+            g = self._convert_with_adaptive_cutoff(s, idx)
+            self.graphs.append(g)
+
+        if self.adaptive_cutoff_count > 0:
+            print(
+                f"[WARN] Adaptive cutoff applied to {self.adaptive_cutoff_count}/{len(structures)} structures "
+                "due to isolated-atom conversion errors."
+            )
+
+    def _build_converter_with_cutoff(self, cutoff: float):
+        """Recreate converter with same init params, overriding cutoff-like fields only."""
+        conv = self.converter
+        conv_cls = type(conv)
+
+        try:
+            sig = inspect.signature(conv_cls.__init__)
+            kwargs = {}
+            for name, p in sig.parameters.items():
+                if name == "self":
+                    continue
+                if hasattr(conv, name):
+                    kwargs[name] = getattr(conv, name)
+
+            # Override common cutoff parameter names
+            for key in ("atom_graph_cutoff", "cutoff", "radius"):
+                if key in sig.parameters:
+                    kwargs[key] = cutoff
+
+            return conv_cls(**kwargs)
+        except Exception:
+            # Fallback to a minimal constructor form used by common CHGNet versions.
+            try:
+                return conv_cls(atom_graph_cutoff=cutoff)
+            except Exception as e:
+                raise RuntimeError(f"Failed to rebuild converter with adaptive cutoff={cutoff}: {e}")
+
+    def _convert_with_adaptive_cutoff(self, structure: Structure, idx: int):
+        # attempt 1: default converter
+        try:
+            return self.converter(structure)
+        except ValueError as e:
+            msg = str(e).lower()
+            if "isolated atom" not in msg:
+                raise
+
+        # attempts 2/3: increased cutoffs
+        for cutoff in (10.0, 20.0):
+            try:
+                retry_converter = self._build_converter_with_cutoff(cutoff)
+                g = retry_converter(structure)
+                self.adaptive_cutoff_count += 1
+                print(f"[WARN] Adaptive cutoff used for structure idx={idx}: cutoff={cutoff}")
+                return g
+            except ValueError as e:
+                if "isolated atom" not in str(e).lower():
+                    raise
+                continue
+
+        raise RuntimeError(
+            f"Graph conversion failed for structure idx={idx} after adaptive cutoffs (10.0, 20.0). "
+            "No data was dropped."
+        )
 
     def __len__(self):
         return len(self.structures)
