@@ -217,12 +217,24 @@ def fit_and_predict(
         for i in range(0, len(test_structures), chunk_size):
             chunk = test_structures[i : i + chunk_size]
             # predict_structure is high-level API
-            res = model.predict_structure(chunk, task="e", return_atom_refs=False)
+            res = model.predict_structure(chunk, task="e")
             if isinstance(res, list):
-                all_preds.extend([float(r["e"]) if isinstance(r, dict) else float(r) for r in res])
+                for r in res:
+                    if isinstance(r, dict):
+                        val = r.get("e", r.get("energy"))
+                        if val is None:
+                            raise KeyError("predict_structure dict response missing 'e'/'energy'")
+                        all_preds.append(float(val))
+                    else:
+                        all_preds.append(float(r))
             else:
-                val = float(res["e"]) if isinstance(res, dict) else float(res)
-                all_preds.append(val)
+                if isinstance(res, dict):
+                    val = res.get("e", res.get("energy"))
+                    if val is None:
+                        raise KeyError("predict_structure dict response missing 'e'/'energy'")
+                    all_preds.append(float(val))
+                else:
+                    all_preds.append(float(res))
 
     return np.array(all_preds)
 
