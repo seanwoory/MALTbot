@@ -13,3 +13,7 @@
 2026-02-21 | matbench_mp_e_form | kgcnn_dimenetpp | METRIC=SKIPPED | not implemented yet | results/daily/2026-02-21/daily10/kgcnn_dimenetpp/results.json
 2026-02-21 | matbench_mp_e_form | ensemble_3seed | METRIC=SKIPPED | pipeline not implemented yet | results/daily/2026-02-21/daily10/ensemble_3seed/results.json
 2026-02-21 | matbench_mp_e_form | chgnet_tta4 | METRIC=SKIPPED | test-time augmentation x4 not implemented yet | results/daily/2026-02-21/daily10/tta4/results.json- 2026-02-22: results/daily/2026-02-22/actions_smoke/results.json
+
+2026-02-23 | matbench_mp_e_form | chgnet_pretrained_infer | METRIC=ERROR | Zero-shot pretrained CHGNet inference | results/daily/2026-02-23/daily10/chgnet_pretrained_infer/results.json
+2026-02-23 | matbench_mp_e_form | chgnet_head_finetune_freeze | METRIC=ERROR | CHGNet frozen backbone finetuning (Readout + AtomRef only) | results/daily/2026-02-23/daily10/chgnet_head_finetune_freeze/results.json
+2026-02-23 | matbench_mp_e_form | chgnet_full_finetune | METRIC=ERROR | Full CHGNet structure finetuning | results/daily/2026-02-23/daily10/chgnet_full_finetune/results.json

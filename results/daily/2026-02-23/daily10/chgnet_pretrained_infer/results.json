@@ -1,0 +1,40 @@
+{
+  "experiment": "chgnet_pretrained_infer",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 194.087,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_pretrained_infer",
+  "note": "Zero-shot pretrained CHGNet inference",
+  "exp_config_path": "configs/experiments/chgnet_pretrained_infer.yaml",
+  "exp_params": {
+    "epochs": 0,
+    "mode": "pretrained"
+  },
+  "output_path": "results/daily/2026-02-23/daily10/chgnet_pretrained_infer/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "f4ecc76eb9b1c4885bf5ee87e3a2944ac07ffcdd",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA L4"
+  },
+  "run": {
+    "returncode": 1,
+    "stdout_tail": "Error: chgnet not installed. Please install chgnet to use this runner.\nUsing device: cuda\n2026-02-23 13:30:33 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-23 13:30:33 INFO     Loading dataset 'matbench_mp_e_form'...\nFetching matbench_mp_e_form.json.gz from https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz to /usr/local/lib/python3.12/dist-packages/matminer/datasets/matbench_mp_e_form.json.gz\n2026-02-23 13:33:37 INFO     Dataset 'matbench_mp_e_form loaded.\n\n--- Starting Fold: 0 ---",
+    "stderr_tail": "\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  47%|####7     | 78.639104/166.734239 [00:00<00:00, 786.36MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  94%|#########4| 157.278208/166.734239 [00:00<00:00, 786.37MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 761.84MB/s]                                \nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 265, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 215, in main\n    preds = fit_and_predict(train_inputs, train_targets, test_inputs, tcfg, device)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 79, in fit_and_predict\n    model = CHGNet.load()\n            ^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'load'"
+  },
+  "error_message": "runner exited with code 1",
+  "traceback_or_stderr_tail": "\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  47%|####7     | 78.639104/166.734239 [00:00<00:00, 786.36MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  94%|#########4| 157.278208/166.734239 [00:00<00:00, 786.37MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 761.84MB/s]                                \nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 265, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 215, in main\n    preds = fit_and_predict(train_inputs, train_targets, test_inputs, tcfg, device)\n            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 79, in fit_and_predict\n    model = CHGNet.load()\n            ^^^^^^^^^^^\nAttributeError: 'NoneType' object has no attribute 'load'"
+}
