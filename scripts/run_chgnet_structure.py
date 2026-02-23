@@ -30,7 +30,6 @@ from torch.utils.data import DataLoader, Dataset
 try:
     from chgnet.model import CHGNet
 except ImportError:
-    print("Error: chgnet not installed. Please install chgnet to use this runner.")
     CHGNet = None
 
 
@@ -173,6 +172,12 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
     args = ap.parse_args()
+
+    if CHGNet is None:
+        raise RuntimeError(
+            "CHGNet is not installed. Please install it first (e.g., `pip install chgnet`) "
+            "and rerun this experiment."
+        )
 
     t0 = time.perf_counter()
     cfg_raw = yaml.safe_load(Path(args.config).read_text())
