@@ -1,11 +1,11 @@
 {
-  "generated_at": "2026-02-22T03:16:24.453882Z",
+  "generated_at": "2026-02-23T13:43:23.406760Z",
   "source": "RESULTS.md",
   "targets": [
     "matbench_mp_e_form",
     "matbench_mp_gap"
   ],
-  "num_rows": 12,
+  "num_rows": 15,
   "generated_files": [
     "docs/assets/progress_matbench_mp_e_form.svg",
     "docs/assets/progress_matbench_mp_gap.svg"
