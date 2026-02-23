@@ -44,6 +44,56 @@ class TrainConfig:
     mode: str = "finetune"  # finetune | pretrained
 
 
+def _build_converter_with_cutoff(base_converter, cutoff: float):
+    """Recreate converter with same init params, overriding cutoff-like fields only."""
+    conv_cls = type(base_converter)
+
+    try:
+        sig = inspect.signature(conv_cls.__init__)
+        kwargs = {}
+        for name in sig.parameters:
+            if name == "self":
+                continue
+            if hasattr(base_converter, name):
+                kwargs[name] = getattr(base_converter, name)
+
+        for key in ("atom_graph_cutoff", "cutoff", "radius"):
+            if key in sig.parameters:
+                kwargs[key] = cutoff
+
+        return conv_cls(**kwargs)
+    except Exception:
+        try:
+            return conv_cls(atom_graph_cutoff=cutoff)
+        except Exception as e:
+            raise RuntimeError(f"Failed to rebuild converter with adaptive cutoff={cutoff}: {e}")
+
+
+def convert_structure_with_adaptive_cutoff(structure: Structure, converter, idx: int = -1):
+    """Convert a structure to graph with adaptive cutoff retries for isolated-atom failures."""
+    try:
+        return converter(structure), None
+    except ValueError as e:
+        if "isolated atom" not in str(e).lower():
+            raise
+
+    for cutoff in (10.0, 20.0):
+        try:
+            retry_converter = _build_converter_with_cutoff(converter, cutoff)
+            g = retry_converter(structure)
+            print(f"[WARN] Adaptive cutoff used for structure idx={idx}: cutoff={cutoff}")
+            return g, cutoff
+        except ValueError as e:
+            if "isolated atom" not in str(e).lower():
+                raise
+            continue
+
+    raise RuntimeError(
+        f"Graph conversion failed for structure idx={idx} after adaptive cutoffs (10.0, 20.0). "
+        "No data was dropped."
+    )
+
+
 class MatbenchStructureDataset(Dataset):
     def __init__(self, structures: List[Structure], targets: List[float], model: CHGNet):
         self.structures = structures
@@ -55,7 +105,9 @@ class MatbenchStructureDataset(Dataset):
         self.adaptive_cutoff_count = 0
 
         for idx, s in enumerate(structures):
-            g = self._convert_with_adaptive_cutoff(s, idx)
+            g, used_cutoff = convert_structure_with_adaptive_cutoff(s, self.converter, idx)
+            if used_cutoff is not None:
+                self.adaptive_cutoff_count += 1
             self.graphs.append(g)
 
         if self.adaptive_cutoff_count > 0:
@@ -63,60 +115,6 @@ class MatbenchStructureDataset(Dataset):
                 f"[WARN] Adaptive cutoff applied to {self.adaptive_cutoff_count}/{len(structures)} structures "
                 "due to isolated-atom conversion errors."
             )
-
-    def _build_converter_with_cutoff(self, cutoff: float):
-        """Recreate converter with same init params, overriding cutoff-like fields only."""
-        conv = self.converter
-        conv_cls = type(conv)
-
-        try:
-            sig = inspect.signature(conv_cls.__init__)
-            kwargs = {}
-            for name, p in sig.parameters.items():
-                if name == "self":
-                    continue
-                if hasattr(conv, name):
-                    kwargs[name] = getattr(conv, name)
-
-            # Override common cutoff parameter names
-            for key in ("atom_graph_cutoff", "cutoff", "radius"):
-                if key in sig.parameters:
-                    kwargs[key] = cutoff
-
-            return conv_cls(**kwargs)
-        except Exception:
-            # Fallback to a minimal constructor form used by common CHGNet versions.
-            try:
-                return conv_cls(atom_graph_cutoff=cutoff)
-            except Exception as e:
-                raise RuntimeError(f"Failed to rebuild converter with adaptive cutoff={cutoff}: {e}")
-
-    def _convert_with_adaptive_cutoff(self, structure: Structure, idx: int):
-        # attempt 1: default converter
-        try:
-            return self.converter(structure)
-        except ValueError as e:
-            msg = str(e).lower()
-            if "isolated atom" not in msg:
-                raise
-
-        # attempts 2/3: increased cutoffs
-        for cutoff in (10.0, 20.0):
-            try:
-                retry_converter = self._build_converter_with_cutoff(cutoff)
-                g = retry_converter(structure)
-                self.adaptive_cutoff_count += 1
-                print(f"[WARN] Adaptive cutoff used for structure idx={idx}: cutoff={cutoff}")
-                return g
-            except ValueError as e:
-                if "isolated atom" not in str(e).lower():
-                    raise
-                continue
-
-        raise RuntimeError(
-            f"Graph conversion failed for structure idx={idx} after adaptive cutoffs (10.0, 20.0). "
-            "No data was dropped."
-        )
 
     def __len__(self):
         return len(self.structures)
@@ -208,33 +206,57 @@ def fit_and_predict(
             t_end = time.perf_counter()
             print(f"Epoch {epoch+1}/{cfg.epochs} - Loss: {np.mean(losses):.6f} - Time: {t_end-t_start:.2f}s")
 
-    # Prediction
+    # Prediction (graph path with adaptive cutoff; do NOT call predict_structure directly)
     model.eval()
     print("Predicting on test structures...")
     all_preds = []
+
+    try:
+        from chgnet.data.loader import collate_graphs
+    except ImportError:
+        def collate_graphs(graphs):
+            return graphs
+
     with torch.no_grad():
         chunk_size = cfg.batch_size
         for i in range(0, len(test_structures), chunk_size):
             chunk = test_structures[i : i + chunk_size]
-            # predict_structure is high-level API
-            res = model.predict_structure(chunk, task="e")
-            if isinstance(res, list):
-                for r in res:
-                    if isinstance(r, dict):
-                        val = r.get("e", r.get("energy"))
-                        if val is None:
-                            raise KeyError("predict_structure dict response missing 'e'/'energy'")
-                        all_preds.append(float(val))
-                    else:
-                        all_preds.append(float(r))
-            else:
-                if isinstance(res, dict):
+
+            chunk_graphs = []
+            for j, st in enumerate(chunk):
+                g, _ = convert_structure_with_adaptive_cutoff(st, model.graph_converter, i + j)
+                chunk_graphs.append(g)
+
+            # Preferred API when available
+            if hasattr(model, "predict_graph"):
+                res = model.predict_graph(chunk_graphs, task="e")
+                if isinstance(res, list):
+                    for r in res:
+                        if isinstance(r, dict):
+                            val = r.get("e", r.get("energy"))
+                            if val is None:
+                                raise KeyError("predict_graph dict response missing 'e'/'energy'")
+                            all_preds.append(float(val))
+                        else:
+                            all_preds.append(float(r))
+                elif isinstance(res, dict):
                     val = res.get("e", res.get("energy"))
                     if val is None:
-                        raise KeyError("predict_structure dict response missing 'e'/'energy'")
+                        raise KeyError("predict_graph dict response missing 'e'/'energy'")
                     all_preds.append(float(val))
                 else:
-                    all_preds.append(float(res))
+                    # tensor/ndarray scalar or batch
+                    try:
+                        all_preds.extend([float(x) for x in np.array(res).reshape(-1)])
+                    except Exception:
+                        all_preds.append(float(res))
+            else:
+                batched_graph = collate_graphs(chunk_graphs)
+                if hasattr(batched_graph, "to"):
+                    batched_graph = batched_graph.to(device)
+                out = model(batched_graph, task="e")
+                pred = out["e"] if isinstance(out, dict) else out
+                all_preds.extend([float(x) for x in np.array(pred.detach().cpu()).reshape(-1)])
 
     return np.array(all_preds)
 
