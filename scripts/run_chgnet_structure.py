@@ -1,22 +1,16 @@
 #!/usr/bin/env python3
-"""
-True CHGNet structure-based finetuning runner for matbench_mp_e_form.
-Optimized for "Quantum Leap" strategy:
-1. Pretrained inference
-2. Frozen backbone + AtomRef (Composition Correction) finetune
-3. Full finetune
-"""
 from __future__ import annotations
 
 import argparse
+import csv
+import inspect
 import json
 import random
 import time
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
-from typing import List, Optional, Any
-import inspect
+from typing import Any, List
 
 import numpy as np
 import torch
@@ -27,7 +21,6 @@ from matbench.bench import MatbenchBenchmark
 from pymatgen.core import Structure
 from torch.utils.data import DataLoader, Dataset
 
-# Imports from chgnet
 try:
     from chgnet.model import CHGNet
 except ImportError:
@@ -44,10 +37,21 @@ class TrainConfig:
     mode: str = "finetune"  # finetune | pretrained
 
 
-def _build_converter_with_cutoff(base_converter, cutoff: float):
-    """Recreate converter with same init params, overriding cutoff-like fields only."""
-    conv_cls = type(base_converter)
+def set_seed(seed: int) -> None:
+    random.seed(seed)
+    np.random.seed(seed)
+    torch.manual_seed(seed)
+    if torch.cuda.is_available():
+        torch.cuda.manual_seed_all(seed)
 
+
+def structure_key(s: Structure) -> str:
+    # Deterministic key for cross-fold graph cache.
+    return json.dumps(s.as_dict(), sort_keys=True, ensure_ascii=False)
+
+
+def _build_converter_with_cutoff(base_converter, cutoff: float):
+    conv_cls = type(base_converter)
     try:
         sig = inspect.signature(conv_cls.__init__)
         kwargs = {}
@@ -56,21 +60,15 @@ def _build_converter_with_cutoff(base_converter, cutoff: float):
                 continue
             if hasattr(base_converter, name):
                 kwargs[name] = getattr(base_converter, name)
-
         for key in ("atom_graph_cutoff", "cutoff", "radius"):
             if key in sig.parameters:
                 kwargs[key] = cutoff
-
         return conv_cls(**kwargs)
     except Exception:
-        try:
-            return conv_cls(atom_graph_cutoff=cutoff)
-        except Exception as e:
-            raise RuntimeError(f"Failed to rebuild converter with adaptive cutoff={cutoff}: {e}")
+        return conv_cls(atom_graph_cutoff=cutoff)
 
 
 def convert_structure_with_adaptive_cutoff(structure: Structure, converter, idx: int = -1):
-    """Convert a structure to graph with adaptive cutoff retries for isolated-atom failures."""
     try:
         return converter(structure), None
     except ValueError as e:
@@ -89,176 +87,149 @@ def convert_structure_with_adaptive_cutoff(structure: Structure, converter, idx:
             continue
 
     raise RuntimeError(
-        f"Graph conversion failed for structure idx={idx} after adaptive cutoffs (10.0, 20.0). "
-        "No data was dropped."
+        f"Graph conversion failed for structure idx={idx} after adaptive cutoffs (10.0, 20.0)."
     )
 
 
-class MatbenchStructureDataset(Dataset):
-    def __init__(self, structures: List[Structure], targets: List[float], model: CHGNet):
-        self.structures = structures
+class GraphDataset(Dataset):
+    def __init__(self, graphs: list, targets: list[float]):
+        self.graphs = graphs
         self.targets = targets
-        self.converter = model.graph_converter
-        # Cache graphs to speed up training
-        print(f"Converting {len(structures)} structures to graphs...")
-        self.graphs = []
-        self.adaptive_cutoff_count = 0
-
-        for idx, s in enumerate(structures):
-            g, used_cutoff = convert_structure_with_adaptive_cutoff(s, self.converter, idx)
-            if used_cutoff is not None:
-                self.adaptive_cutoff_count += 1
-            self.graphs.append(g)
-
-        if self.adaptive_cutoff_count > 0:
-            print(
-                f"[WARN] Adaptive cutoff applied to {self.adaptive_cutoff_count}/{len(structures)} structures "
-                "due to isolated-atom conversion errors."
-            )
 
     def __len__(self):
-        return len(self.structures)
+        return len(self.graphs)
 
     def __getitem__(self, idx):
         return self.graphs[idx], torch.tensor(self.targets[idx], dtype=torch.float32)
 
 
-def set_seed(seed: int) -> None:
-    random.seed(seed)
-    np.random.seed(seed)
-    torch.manual_seed(seed)
-    if torch.cuda.is_available():
-        torch.cuda.manual_seed_all(seed)
-
-
-def fit_and_predict(
-    train_structures: List[Structure],
-    train_targets: List[float],
-    test_structures: List[Structure],
-    cfg: TrainConfig,
-    device: torch.device,
-) -> np.ndarray:
-    # Load model
-    model = CHGNet.load()
-    model.to(device)
-
-    if cfg.mode == "pretrained" or cfg.epochs == 0:
-        print("Running in pretrained inference mode...")
-        model.eval()
-    else:
-        # Freeze backbone if requested
-        if cfg.freeze_backbone:
-            print("Freezing backbone (keeping only readout/composition layers trainable)...")
-            # Heuristic: CHGNet has graph_comp blocks and final MLP. 
-            # Composition model is also separate.
-            for name, param in model.named_parameters():
-                if any(x in name for x in ["readout", "composition", "mlp"]):
-                    param.requires_grad = True
-                else:
-                    param.requires_grad = False
-        
-        # Optimizer
-        trainable_params = [p for p in model.parameters() if p.requires_grad]
-        optimizer = optim.AdamW(trainable_params, lr=cfg.lr, weight_decay=cfg.weight_decay)
-        criterion = nn.HuberLoss() # Using Huber loss for robustness as per strategy
-
-        # Data Loading
-        try:
-            from chgnet.data.loader import collate_graphs
-        except ImportError:
-            # Simple fallback collate if internal import fails
-            def collate_graphs(batch):
-                graphs, targets = zip(*batch)
-                return list(graphs), torch.stack(targets)
-
-        train_ds = MatbenchStructureDataset(train_structures, train_targets, model)
-        
-        def custom_collate(batch):
-            gs, ts = zip(*batch)
-            return collate_graphs(list(gs)), torch.stack(ts)
-
-        train_loader = DataLoader(train_ds, batch_size=cfg.batch_size, shuffle=True, collate_fn=custom_collate)
-
-        # Training loop
-        model.train()
-        print(f"Starting training for {cfg.epochs} epochs...")
-        for epoch in range(cfg.epochs):
-            t_start = time.perf_counter()
-            losses = []
-            for bg, targets in train_loader:
-                bg = bg.to(device)
-                targets = targets.to(device)
-                
-                optimizer.zero_grad()
-                # Forward: pass 'e' task
-                preds = model(bg, task="e")
-                # Preds is usually a dict if multiple tasks, or a tensor if single
-                if isinstance(preds, dict):
-                    pred_e = preds["e"]
-                else:
-                    pred_e = preds
-                
-                loss = criterion(pred_e.view(-1), targets.view(-1))
-                loss.backward()
-                optimizer.step()
-                losses.append(loss.item())
-            
-            t_end = time.perf_counter()
-            print(f"Epoch {epoch+1}/{cfg.epochs} - Loss: {np.mean(losses):.6f} - Time: {t_end-t_start:.2f}s")
-
-    # Prediction (graph path with adaptive cutoff; do NOT call predict_structure directly)
-    model.eval()
-    print("Predicting on test structures...")
-    all_preds = []
-
+def collate_or_fallback(batch):
+    graphs, targets = zip(*batch)
     try:
         from chgnet.data.loader import collate_graphs
-    except ImportError:
-        def collate_graphs(graphs):
-            return graphs
 
+        return collate_graphs(list(graphs)), torch.stack(targets)
+    except Exception:
+        return list(graphs), torch.stack(targets)
+
+
+def run_predict_on_graphs(model, graphs: list, device: torch.device, batch_size: int) -> np.ndarray:
+    model.eval()
+    preds: list[float] = []
     with torch.no_grad():
-        chunk_size = cfg.batch_size
-        for i in range(0, len(test_structures), chunk_size):
-            chunk = test_structures[i : i + chunk_size]
-
-            chunk_graphs = []
-            for j, st in enumerate(chunk):
-                g, _ = convert_structure_with_adaptive_cutoff(st, model.graph_converter, i + j)
-                chunk_graphs.append(g)
-
-            # Preferred API when available
+        for i in range(0, len(graphs), batch_size):
+            chunk_graphs = graphs[i : i + batch_size]
             if hasattr(model, "predict_graph"):
-                res = model.predict_graph(chunk_graphs, task="e")
-                if isinstance(res, list):
-                    for r in res:
+                out = model.predict_graph(chunk_graphs, task="e")
+                if isinstance(out, list):
+                    for r in out:
                         if isinstance(r, dict):
-                            val = r.get("e", r.get("energy"))
-                            if val is None:
+                            v = r.get("e", r.get("energy"))
+                            if v is None:
                                 raise KeyError("predict_graph dict response missing 'e'/'energy'")
-                            all_preds.append(float(val))
+                            preds.append(float(v))
                         else:
-                            all_preds.append(float(r))
-                elif isinstance(res, dict):
-                    val = res.get("e", res.get("energy"))
-                    if val is None:
+                            preds.append(float(r))
+                elif isinstance(out, dict):
+                    v = out.get("e", out.get("energy"))
+                    if v is None:
                         raise KeyError("predict_graph dict response missing 'e'/'energy'")
-                    all_preds.append(float(val))
+                    preds.append(float(v))
                 else:
-                    # tensor/ndarray scalar or batch
-                    try:
-                        all_preds.extend([float(x) for x in np.array(res).reshape(-1)])
-                    except Exception:
-                        all_preds.append(float(res))
+                    preds.extend([float(x) for x in np.array(out).reshape(-1)])
             else:
-                batched_graph = collate_graphs(chunk_graphs)
-                if hasattr(batched_graph, "to"):
-                    batched_graph = batched_graph.to(device)
-                out = model(batched_graph, task="e")
-                pred = out["e"] if isinstance(out, dict) else out
-                all_preds.extend([float(x) for x in np.array(pred.detach().cpu()).reshape(-1)])
+                bg, _ = collate_or_fallback([(g, 0.0) for g in chunk_graphs])
+                if hasattr(bg, "to"):
+                    bg = bg.to(device)
+                out = model(bg, task="e")
+                pe = out["e"] if isinstance(out, dict) else out
+                preds.extend([float(x) for x in np.array(pe.detach().cpu()).reshape(-1)])
+    return np.array(preds)
 
-    return np.array(all_preds)
+
+def train_one_fold(
+    model,
+    train_graphs: list,
+    train_targets: list[float],
+    cfg: TrainConfig,
+    device: torch.device,
+    history_csv: Path,
+    ckpt_path: Path,
+) -> None:
+    if cfg.mode == "pretrained" or cfg.epochs == 0:
+        return
+
+    if cfg.freeze_backbone:
+        print("Freezing backbone (keeping readout/composition/mlp trainable)...")
+        for name, param in model.named_parameters():
+            if any(x in name for x in ["readout", "composition", "mlp"]):
+                param.requires_grad = True
+            else:
+                param.requires_grad = False
+
+    n = len(train_graphs)
+    idx = np.random.permutation(n)
+    val_n = max(1, int(0.1 * n))
+    val_idx = idx[:val_n]
+    tr_idx = idx[val_n:]
+    if len(tr_idx) == 0:
+        tr_idx = val_idx
+
+    tr_graphs = [train_graphs[i] for i in tr_idx]
+    tr_targets = [train_targets[i] for i in tr_idx]
+    va_graphs = [train_graphs[i] for i in val_idx]
+    va_targets = [train_targets[i] for i in val_idx]
+
+    train_loader = DataLoader(
+        GraphDataset(tr_graphs, tr_targets),
+        batch_size=cfg.batch_size,
+        shuffle=True,
+        collate_fn=collate_or_fallback,
+    )
+
+    criterion = nn.HuberLoss()
+    optimizer = optim.AdamW([p for p in model.parameters() if p.requires_grad], lr=cfg.lr, weight_decay=cfg.weight_decay)
+
+    best_mae = float("inf")
+    history_rows = []
+    history_csv.parent.mkdir(parents=True, exist_ok=True)
+
+    for ep in range(1, cfg.epochs + 1):
+        model.train()
+        losses = []
+        for bg, y in train_loader:
+            if hasattr(bg, "to"):
+                bg = bg.to(device)
+            y = y.to(device)
+            optimizer.zero_grad()
+            out = model(bg, task="e")
+            pe = out["e"] if isinstance(out, dict) else out
+            loss = criterion(pe.view(-1), y.view(-1))
+            loss.backward()
+            optimizer.step()
+            losses.append(float(loss.item()))
+
+        train_loss = float(np.mean(losses)) if losses else None
+        val_pred = run_predict_on_graphs(model, va_graphs, device, cfg.batch_size)
+        val_true = np.array(va_targets, dtype=float)
+        val_mae = float(np.mean(np.abs(val_pred - val_true)))
+        val_loss = float(np.mean(np.abs(val_pred - val_true)))
+
+        history_rows.append({"epoch": ep, "train_loss": train_loss, "val_loss": val_loss, "val_mae": val_mae})
+        print(f"Epoch {ep}/{cfg.epochs} train_loss={train_loss:.6f} val_mae={val_mae:.6f}")
+
+        if val_mae < best_mae:
+            best_mae = val_mae
+            ckpt_path.parent.mkdir(parents=True, exist_ok=True)
+            torch.save(model.state_dict(), ckpt_path)
+
+    with history_csv.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=["epoch", "train_loss", "val_loss", "val_mae"])
+        w.writeheader()
+        w.writerows(history_rows)
+
+    if ckpt_path.exists():
+        model.load_state_dict(torch.load(ckpt_path, map_location=device))
 
 
 def resolve_out_dir(cfg_raw: dict) -> Path:
@@ -274,35 +245,31 @@ def main():
     args = ap.parse_args()
 
     if CHGNet is None:
-        raise RuntimeError(
-            "CHGNet is not installed. Please install it first (e.g., `pip install chgnet`) "
-            "and rerun this experiment."
-        )
+        raise RuntimeError("CHGNet is not installed. Please install it first (`pip install chgnet`).")
 
     t0 = time.perf_counter()
     cfg_raw = yaml.safe_load(Path(args.config).read_text())
-    
+
     seed = int(cfg_raw.get("seed", 42))
     set_seed(seed)
 
     task_name = cfg_raw["task"]["name"]
     train_dict = cfg_raw.get("training", {})
     extras = cfg_raw.get("training_extras", {})
-    
-    tcfg = TrainConfig(
+
+    cfg = TrainConfig(
         epochs=int(train_dict.get("epochs", 20)),
         batch_size=int(train_dict.get("batch_size", 64)),
         lr=float(train_dict.get("lr", 1e-4)),
         weight_decay=float(train_dict.get("weight_decay", 1e-5)),
         freeze_backbone=bool(extras.get("freeze_backbone", False)),
-        mode=str(extras.get("mode", "finetune"))
+        mode=str(extras.get("mode", "finetune")),
     )
 
     device_cfg = cfg_raw.get("runtime", {}).get("device", "auto")
     device = torch.device("cuda" if torch.cuda.is_available() and device_cfg == "auto" else "cpu")
     print(f"Using device: {device}")
 
-    # Matbench Loading
     mb = MatbenchBenchmark(subset=[task_name], autoload=False)
     task = next(iter(mb.tasks))
     task.load()
@@ -310,61 +277,129 @@ def main():
     folds = cfg_raw.get("task", {}).get("folds", "all")
     folds_to_run = task.folds if folds == "all" else (folds if isinstance(folds, list) else [folds])
 
-    fold_mae = {}
-    
+    # --- Build fold payloads once (with ids/y_true) ---
+    fold_payload = {}
+    all_structures = []
     for fold in folds_to_run:
-        print(f"\n--- Starting Fold: {fold} ---")
-        train_inputs, train_targets = task.get_train_and_val_data(fold)
-        test_inputs = task.get_test_data(fold, include_target=False)
-        
-        preds = fit_and_predict(train_inputs, train_targets, test_inputs, tcfg, device)
-        task.record(fold, preds)
+        tr_x, tr_y = task.get_train_and_val_data(fold)
+        te_x = task.get_test_data(fold, include_target=False)
+        te_x_t, te_y = task.get_test_data(fold, include_target=True)
+        ids = list(getattr(te_y, "index", range(len(te_y))))
+        fold_payload[fold] = {
+            "train_x": list(tr_x),
+            "train_y": [float(v) for v in tr_y],
+            "test_x": list(te_x),
+            "test_y": [float(v) for v in te_y],
+            "test_ids": [str(x) for x in ids],
+        }
+        all_structures.extend(list(tr_x))
+        all_structures.extend(list(te_x))
 
-        try:
-            _, y_test = task.get_test_data(fold, include_target=True)
-            mae = np.mean(np.abs(preds - y_test))
-            fold_mae[fold] = float(mae)
-            print(f"Fold {fold} MAE: {mae:.6f}")
-        except Exception as e:
-            print(f"Error calculating fold MAE: {e}")
+    # --- Global graph cache (convert once, reuse all folds) ---
+    cache_path = Path("data/mp_e_form_chgnet_graphs.pt")
+    cache_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Save results
+    graph_cache: dict[str, Any] = {}
+    converter_model = CHGNet.load()
+    converter = converter_model.graph_converter
+
+    if cache_path.exists():
+        print(f"Loading graph cache: {cache_path}")
+        graph_cache = torch.load(cache_path, map_location="cpu")
+    else:
+        print("No graph cache found; creating global graph cache...")
+
+    missing = 0
+    adaptive_count = 0
+    for i, s in enumerate(all_structures):
+        k = structure_key(s)
+        if k in graph_cache:
+            continue
+        g, used = convert_structure_with_adaptive_cutoff(s, converter, i)
+        graph_cache[k] = g
+        missing += 1
+        if used is not None:
+            adaptive_count += 1
+
+    if missing > 0:
+        print(f"Saving graph cache: {cache_path} (new={missing}, adaptive={adaptive_count})")
+        torch.save(graph_cache, cache_path)
+
     out_dir = resolve_out_dir(cfg_raw)
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    mean_mae = np.mean(list(fold_mae.values())) if fold_mae else None
-    
+    fold_mae = {}
+    for fold in folds_to_run:
+        print(f"\n--- Starting Fold: {fold} ---")
+        payload = fold_payload[fold]
+
+        train_graphs = [graph_cache[structure_key(s)] for s in payload["train_x"]]
+        test_graphs = [graph_cache[structure_key(s)] for s in payload["test_x"]]
+
+        model = CHGNet.load()
+        model.to(device)
+
+        fold_tag = str(fold).replace("/", "_")
+        history_csv = out_dir / f"history_fold_{fold_tag}.csv"
+        ckpt_path = out_dir / f"model_fold_{fold_tag}.pth"
+
+        train_one_fold(
+            model,
+            train_graphs,
+            payload["train_y"],
+            cfg,
+            device,
+            history_csv,
+            ckpt_path,
+        )
+
+        preds = run_predict_on_graphs(model, test_graphs, device, cfg.batch_size)
+        task.record(fold, preds)
+
+        y_true = np.array(payload["test_y"], dtype=float)
+        mae = float(np.mean(np.abs(preds - y_true)))
+        fold_mae[fold] = mae
+        print(f"Fold {fold} MAE: {mae:.6f}")
+
+        preds_csv = out_dir / f"preds_fold_{fold_tag}.csv"
+        with preds_csv.open("w", newline="", encoding="utf-8") as f:
+            w = csv.writer(f)
+            w.writerow(["id", "y_true", "y_pred"])
+            for sid, yt, yp in zip(payload["test_ids"], y_true.tolist(), preds.tolist()):
+                w.writerow([sid, yt, yp])
+
+    mean_mae = float(np.mean(list(fold_mae.values()))) if fold_mae else None
+
     result = {
-        "task": {
-            "name": task_name,
-            "scores": task.scores,
-        },
+        "task": {"name": task_name, "scores": task.scores},
         "metrics": {
             "metric_name": "MAE",
             "metric_value": mean_mae,
             "fold_scores": fold_mae,
             "mean": mean_mae,
-            "std": np.std(list(fold_mae.values())) if len(fold_mae) > 1 else 0.0,
+            "std": float(np.std(list(fold_mae.values()))) if len(fold_mae) > 1 else 0.0,
         },
         "model": {
             "name": "CHGNet-Structure",
-            "mode": tcfg.mode,
-            "freeze_backbone": tcfg.freeze_backbone,
+            "mode": cfg.mode,
+            "freeze_backbone": cfg.freeze_backbone,
         },
         "hparams": train_dict,
         "runtime": {"device": str(device), "total_time_sec": time.perf_counter() - t0},
-        "seed": seed
+        "seed": seed,
+        "graph_cache": {"path": str(cache_path), "size": len(graph_cache)},
     }
-    
+
     out_file = out_dir / "results.json"
     out_file.write_text(json.dumps(result, indent=2, default=str), encoding="utf-8")
     print(f"\nFinal mean MAE: {mean_mae}")
     print(f"Wrote results to {out_file}")
-    
+
     if mean_mae is not None:
         print(f"FINAL_METRIC_MAE={mean_mae:.6f}")
     else:
         print("FINAL_METRIC_MAE=NA")
+
 
 if __name__ == "__main__":
     main()
