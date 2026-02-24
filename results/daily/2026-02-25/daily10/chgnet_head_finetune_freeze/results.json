@@ -1,0 +1,41 @@
+{
+  "experiment": "chgnet_head_finetune_freeze",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 800.326,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_head_finetune_freeze",
+  "note": "CHGNet frozen backbone finetuning (Readout + AtomRef only)",
+  "exp_config_path": "configs/experiments/chgnet_head_finetune_freeze.yaml",
+  "exp_params": {
+    "epochs": 10,
+    "lr": "1e-3",
+    "freeze_backbone": true
+  },
+  "output_path": "results/daily/2026-02-25/daily10/chgnet_head_finetune_freeze/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "90286b4416bfb53df0c9a3a54330cb7183ab7f76",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "Tesla T4"
+  },
+  "run": {
+    "returncode": -9,
+    "stdout_tail": "[WARN] Adaptive cutoff used for structure idx=2067: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2068: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2077: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2078: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2079: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2080: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2094: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2095: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2102: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2132: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2133: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2832: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2847: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2853: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2855: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2856: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2857: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2858: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2859: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2886: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2898: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2899: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2903: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2923: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=3662: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=3665: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3668: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3680: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3684: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3686: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3688: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3690: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=3727: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=4511: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=4556: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=4564: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=5367: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=5373: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=6193: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=6964: cutoff=10.0",
+    "stderr_tail": ""
+  },
+  "error_message": "runner exited with code -9",
+  "traceback_or_stderr_tail": ""
+}
