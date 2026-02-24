@@ -305,7 +305,7 @@ def main():
 
     if cache_path.exists():
         print(f"Loading graph cache: {cache_path}")
-        graph_cache = torch.load(cache_path, map_location="cpu")
+        graph_cache = torch.load(cache_path, map_location="cpu", weights_only=False)
     else:
         print("No graph cache found; creating global graph cache...")
 
