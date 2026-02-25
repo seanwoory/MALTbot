@@ -133,6 +133,37 @@ def collate_or_fallback(batch):
         return list(graphs), torch.stack(targets)
 
 
+
+
+def move_graph_batch_to_device(obj, device):
+    """Best-effort recursive device move for tensors / graph batches."""
+    if torch.is_tensor(obj):
+        return obj.to(device)
+
+    if hasattr(obj, "to"):
+        try:
+            return obj.to(device)
+        except Exception:
+            pass
+
+    if isinstance(obj, list):
+        return [move_graph_batch_to_device(x, device) for x in obj]
+    if isinstance(obj, tuple):
+        return tuple(move_graph_batch_to_device(x, device) for x in obj)
+    if isinstance(obj, dict):
+        return {k: move_graph_batch_to_device(v, device) for k, v in obj.items()}
+
+    # Graph-like objects without .to() (best-effort in-place tensor field move)
+    if hasattr(obj, "__dict__"):
+        try:
+            for k, v in obj.__dict__.items():
+                setattr(obj, k, move_graph_batch_to_device(v, device))
+            return obj
+        except Exception:
+            return obj
+
+    return obj
+
 def run_predict_on_graph_files(model, graph_paths: list[str], device: torch.device, batch_size: int) -> np.ndarray:
     model.eval()
     preds: list[float] = []
@@ -142,6 +173,7 @@ def run_predict_on_graph_files(model, graph_paths: list[str], device: torch.devi
             chunk_graphs = [torch.load(p, map_location="cpu", weights_only=False) for p in chunk_paths]
 
             if hasattr(model, "predict_graph"):
+                chunk_graphs = move_graph_batch_to_device(chunk_graphs, device)
                 out = model.predict_graph(chunk_graphs, task="e")
                 if isinstance(out, list):
                     for r in out:
@@ -161,8 +193,7 @@ def run_predict_on_graph_files(model, graph_paths: list[str], device: torch.devi
                     preds.extend([float(x) for x in np.array(out).reshape(-1)])
             else:
                 bg, _ = collate_or_fallback([(g, 0.0) for g in chunk_graphs])
-                if hasattr(bg, "to"):
-                    bg = bg.to(device)
+                bg = move_graph_batch_to_device(bg, device)
                 out = model(bg, task="e")
                 pe = out["e"] if isinstance(out, dict) else out
                 preds.extend([float(x) for x in np.array(pe.detach().cpu()).reshape(-1)])
@@ -223,8 +254,7 @@ def train_one_fold(
         model.train()
         losses = []
         for bg, y in train_loader:
-            if hasattr(bg, "to"):
-                bg = bg.to(device)
+            bg = move_graph_batch_to_device(bg, device)
             y = y.to(device)
             optimizer.zero_grad()
             out = model(bg, task="e")
