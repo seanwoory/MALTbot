@@ -3,6 +3,7 @@ from __future__ import annotations
 
 import argparse
 import csv
+import hashlib
 import inspect
 import json
 import random
@@ -46,8 +47,11 @@ def set_seed(seed: int) -> None:
 
 
 def structure_key(s: Structure) -> str:
-    # Deterministic key for cross-fold graph cache.
     return json.dumps(s.as_dict(), sort_keys=True, ensure_ascii=False)
+
+
+def structure_hash(s: Structure) -> str:
+    return hashlib.sha1(structure_key(s).encode("utf-8")).hexdigest()
 
 
 def _build_converter_with_cutoff(base_converter, cutoff: float):
@@ -91,16 +95,32 @@ def convert_structure_with_adaptive_cutoff(structure: Structure, converter, idx:
     )
 
 
-class GraphDataset(Dataset):
-    def __init__(self, graphs: list, targets: list[float]):
-        self.graphs = graphs
+def ensure_graph_on_disk(structure: Structure, converter, cache_dir: Path, idx: int = -1) -> tuple[str, bool]:
+    """Return (filepath, adaptive_used). Converts and saves graph lazily if missing."""
+    sid = structure_hash(structure)
+    path = cache_dir / f"{sid}.pt"
+    if path.exists():
+        return str(path), False
+
+    g, used = convert_structure_with_adaptive_cutoff(structure, converter, idx)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    torch.save(g, path)
+    del g
+    return str(path), used is not None
+
+
+class GraphFileDataset(Dataset):
+    def __init__(self, graph_paths: list[str], targets: list[float]):
+        self.graph_paths = graph_paths
         self.targets = targets
 
     def __len__(self):
-        return len(self.graphs)
+        return len(self.graph_paths)
 
     def __getitem__(self, idx):
-        return self.graphs[idx], torch.tensor(self.targets[idx], dtype=torch.float32)
+        graph = torch.load(self.graph_paths[idx], map_location="cpu", weights_only=False)
+        y = torch.tensor(self.targets[idx], dtype=torch.float32)
+        return graph, y
 
 
 def collate_or_fallback(batch):
@@ -113,12 +133,14 @@ def collate_or_fallback(batch):
         return list(graphs), torch.stack(targets)
 
 
-def run_predict_on_graphs(model, graphs: list, device: torch.device, batch_size: int) -> np.ndarray:
+def run_predict_on_graph_files(model, graph_paths: list[str], device: torch.device, batch_size: int) -> np.ndarray:
     model.eval()
     preds: list[float] = []
     with torch.no_grad():
-        for i in range(0, len(graphs), batch_size):
-            chunk_graphs = graphs[i : i + batch_size]
+        for i in range(0, len(graph_paths), batch_size):
+            chunk_paths = graph_paths[i : i + batch_size]
+            chunk_graphs = [torch.load(p, map_location="cpu", weights_only=False) for p in chunk_paths]
+
             if hasattr(model, "predict_graph"):
                 out = model.predict_graph(chunk_graphs, task="e")
                 if isinstance(out, list):
@@ -144,12 +166,15 @@ def run_predict_on_graphs(model, graphs: list, device: torch.device, batch_size:
                 out = model(bg, task="e")
                 pe = out["e"] if isinstance(out, dict) else out
                 preds.extend([float(x) for x in np.array(pe.detach().cpu()).reshape(-1)])
+
+            del chunk_graphs
+
     return np.array(preds)
 
 
 def train_one_fold(
     model,
-    train_graphs: list,
+    train_graph_paths: list[str],
     train_targets: list[float],
     cfg: TrainConfig,
     device: torch.device,
@@ -167,7 +192,7 @@ def train_one_fold(
             else:
                 param.requires_grad = False
 
-    n = len(train_graphs)
+    n = len(train_graph_paths)
     idx = np.random.permutation(n)
     val_n = max(1, int(0.1 * n))
     val_idx = idx[:val_n]
@@ -175,13 +200,13 @@ def train_one_fold(
     if len(tr_idx) == 0:
         tr_idx = val_idx
 
-    tr_graphs = [train_graphs[i] for i in tr_idx]
+    tr_paths = [train_graph_paths[i] for i in tr_idx]
     tr_targets = [train_targets[i] for i in tr_idx]
-    va_graphs = [train_graphs[i] for i in val_idx]
+    va_paths = [train_graph_paths[i] for i in val_idx]
     va_targets = [train_targets[i] for i in val_idx]
 
     train_loader = DataLoader(
-        GraphDataset(tr_graphs, tr_targets),
+        GraphFileDataset(tr_paths, tr_targets),
         batch_size=cfg.batch_size,
         shuffle=True,
         collate_fn=collate_or_fallback,
@@ -210,7 +235,7 @@ def train_one_fold(
             losses.append(float(loss.item()))
 
         train_loss = float(np.mean(losses)) if losses else None
-        val_pred = run_predict_on_graphs(model, va_graphs, device, cfg.batch_size)
+        val_pred = run_predict_on_graph_files(model, va_paths, device, cfg.batch_size)
         val_true = np.array(va_targets, dtype=float)
         val_mae = float(np.mean(np.abs(val_pred - val_true)))
         val_loss = float(np.mean(np.abs(val_pred - val_true)))
@@ -229,7 +254,7 @@ def train_one_fold(
         w.writerows(history_rows)
 
     if ckpt_path.exists():
-        model.load_state_dict(torch.load(ckpt_path, map_location=device))
+        model.load_state_dict(torch.load(ckpt_path, map_location=device, weights_only=False))
 
 
 def resolve_out_dir(cfg_raw: dict) -> Path:
@@ -277,53 +302,54 @@ def main():
     folds = cfg_raw.get("task", {}).get("folds", "all")
     folds_to_run = task.folds if folds == "all" else (folds if isinstance(folds, list) else [folds])
 
-    # --- Build fold payloads once (with ids/y_true) ---
-    fold_payload = {}
-    all_structures = []
-    for fold in folds_to_run:
-        tr_x, tr_y = task.get_train_and_val_data(fold)
-        te_x = task.get_test_data(fold, include_target=False)
-        te_x_t, te_y = task.get_test_data(fold, include_target=True)
-        ids = list(getattr(te_y, "index", range(len(te_y))))
-        fold_payload[fold] = {
-            "train_x": list(tr_x),
-            "train_y": [float(v) for v in tr_y],
-            "test_x": list(te_x),
-            "test_y": [float(v) for v in te_y],
-            "test_ids": [str(x) for x in ids],
-        }
-        all_structures.extend(list(tr_x))
-        all_structures.extend(list(te_x))
+    # Disk-backed graph cache dir
+    graph_cache_dir = Path("data/chgnet_graph_cache") / task_name
+    graph_cache_dir.mkdir(parents=True, exist_ok=True)
 
-    # --- Global graph cache (convert once, reuse all folds) ---
-    cache_path = Path("data/mp_e_form_chgnet_graphs.pt")
-    cache_path.parent.mkdir(parents=True, exist_ok=True)
-
-    graph_cache: dict[str, Any] = {}
     converter_model = CHGNet.load()
     converter = converter_model.graph_converter
 
-    if cache_path.exists():
-        print(f"Loading graph cache: {cache_path}")
-        graph_cache = torch.load(cache_path, map_location="cpu", weights_only=False)
-    else:
-        print("No graph cache found; creating global graph cache...")
-
-    missing = 0
+    # Build fold payload with lazy graph paths (no giant in-RAM graph list)
+    fold_payload = {}
+    converted_count = 0
     adaptive_count = 0
-    for i, s in enumerate(all_structures):
-        k = structure_key(s)
-        if k in graph_cache:
-            continue
-        g, used = convert_structure_with_adaptive_cutoff(s, converter, i)
-        graph_cache[k] = g
-        missing += 1
-        if used is not None:
-            adaptive_count += 1
 
-    if missing > 0:
-        print(f"Saving graph cache: {cache_path} (new={missing}, adaptive={adaptive_count})")
-        torch.save(graph_cache, cache_path)
+    for fold in folds_to_run:
+        print(f"Preparing disk-backed graph paths for fold={fold} ...")
+        tr_x, tr_y = task.get_train_and_val_data(fold)
+        te_x = task.get_test_data(fold, include_target=False)
+        _, te_y = task.get_test_data(fold, include_target=True)
+        ids = list(getattr(te_y, "index", range(len(te_y))))
+
+        tr_paths = []
+        for i, s in enumerate(tr_x):
+            p, used = ensure_graph_on_disk(s, converter, graph_cache_dir, i)
+            tr_paths.append(p)
+            if used:
+                adaptive_count += 1
+            if not Path(p).exists():
+                converted_count += 1
+
+        te_paths = []
+        for j, s in enumerate(te_x):
+            p, used = ensure_graph_on_disk(s, converter, graph_cache_dir, j)
+            te_paths.append(p)
+            if used:
+                adaptive_count += 1
+            if not Path(p).exists():
+                converted_count += 1
+
+        fold_payload[fold] = {
+            "train_paths": tr_paths,
+            "train_y": [float(v) for v in tr_y],
+            "test_paths": te_paths,
+            "test_y": [float(v) for v in te_y],
+            "test_ids": [str(x) for x in ids],
+        }
+
+    print(f"Graph cache ready at: {graph_cache_dir}")
+    if adaptive_count > 0:
+        print(f"[WARN] Adaptive cutoff triggered {adaptive_count} times during cache warm-up")
 
     out_dir = resolve_out_dir(cfg_raw)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -332,9 +358,6 @@ def main():
     for fold in folds_to_run:
         print(f"\n--- Starting Fold: {fold} ---")
         payload = fold_payload[fold]
-
-        train_graphs = [graph_cache[structure_key(s)] for s in payload["train_x"]]
-        test_graphs = [graph_cache[structure_key(s)] for s in payload["test_x"]]
 
         model = CHGNet.load()
         model.to(device)
@@ -345,7 +368,7 @@ def main():
 
         train_one_fold(
             model,
-            train_graphs,
+            payload["train_paths"],
             payload["train_y"],
             cfg,
             device,
@@ -353,7 +376,7 @@ def main():
             ckpt_path,
         )
 
-        preds = run_predict_on_graphs(model, test_graphs, device, cfg.batch_size)
+        preds = run_predict_on_graph_files(model, payload["test_paths"], device, cfg.batch_size)
         task.record(fold, preds)
 
         y_true = np.array(payload["test_y"], dtype=float)
@@ -387,7 +410,7 @@ def main():
         "hparams": train_dict,
         "runtime": {"device": str(device), "total_time_sec": time.perf_counter() - t0},
         "seed": seed,
-        "graph_cache": {"path": str(cache_path), "size": len(graph_cache)},
+        "graph_cache": {"dir": str(graph_cache_dir)},
     }
 
     out_file = out_dir / "results.json"
