@@ -1,0 +1,98 @@
+{
+  "experiment": "chgnet_pretrained_infer",
+  "task": {
+<<<<<<< HEAD
+    "name": "matbench_mp_e_form",
+    "scores": {
+      "mae": {
+        "mean": 4.754132306189872,
+        "max": 4.764623008873454,
+        "min": 4.7400410560063655,
+        "std": 0.008852839840683151
+      },
+      "rmse": {
+        "mean": 5.024483931904859,
+        "max": 5.036172040567228,
+        "min": 5.009392058738079,
+        "std": 0.009622878368912962
+      },
+      "mape": {
+        "mean": 33.684111198426315,
+        "max": 37.00707949835546,
+        "min": 27.0695562894319,
+        "std": 3.7690862012018727
+      },
+      "max_error": {
+        "mean": 14.291945599943158,
+        "max": 14.401731917114258,
+        "min": 14.137369355265108,
+        "std": 0.10842464835389105
+      }
+    }
+  },
+  "status": "success",
+  "metric": 4.754132306189872,
+  "metric_name": "MAE",
+  "metric_value": 4.754132306189872,
+  "metric_unit": "eV/atom",
+  "fold_scores": {
+    "0": 4.754171206320064,
+    "1": 4.7400410560063655,
+    "2": 4.749712262496654,
+    "3": 4.762113997252821,
+    "4": 4.764623008873454
+  },
+  "mean": 4.754132306189872,
+  "std": 0.008852839840683151,
+  "train_wall_time_sec": 3968.273,
+=======
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 901.082,
+>>>>>>> 9a8f3edcf907c61bad8997b803f43ef5b16a3221
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_pretrained_infer",
+  "note": "Zero-shot pretrained CHGNet inference",
+  "exp_config_path": "configs/experiments/chgnet_pretrained_infer.yaml",
+  "exp_params": {
+    "epochs": 0,
+    "mode": "pretrained"
+  },
+  "output_path": "results/daily/2026-02-25/daily10/chgnet_pretrained_infer/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+<<<<<<< HEAD
+    "git_commit": "90447d8b2f86a4fa15c3e94bfe254c17c788233d",
+=======
+    "git_commit": "7af99dfdd5b23538dd93d1d12845b2c16258ecc3",
+>>>>>>> 9a8f3edcf907c61bad8997b803f43ef5b16a3221
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "Tesla T4"
+  },
+  "run": {
+<<<<<<< HEAD
+    "returncode": 0,
+    "stdout_tail": "Preparing disk-backed graph paths for fold=1 ...\nPreparing disk-backed graph paths for fold=2 ...\nPreparing disk-backed graph paths for fold=3 ...\nPreparing disk-backed graph paths for fold=4 ...\nGraph cache ready at: data/chgnet_graph_cache/matbench_mp_e_form\n[WARN] Adaptive cutoff triggered 185 times during cache warm-up\n\n--- Starting Fold: 0 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 14:29:27 INFO     Recorded fold matbench_mp_e_form-0 successfully.\nFold 0 MAE: 4.754171\n\n--- Starting Fold: 1 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 14:32:11 INFO     Recorded fold matbench_mp_e_form-1 successfully.\nFold 1 MAE: 4.740041\n\n--- Starting Fold: 2 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 14:34:53 INFO     Recorded fold matbench_mp_e_form-2 successfully.\nFold 2 MAE: 4.749712\n\n--- Starting Fold: 3 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 14:37:34 INFO     Recorded fold matbench_mp_e_form-3 successfully.\nFold 3 MAE: 4.762114\n\n--- Starting Fold: 4 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 14:40:14 INFO     Recorded fold matbench_mp_e_form-4 successfully.\nFold 4 MAE: 4.764623\n\nFinal mean MAE: 4.754132306189872\nWrote results to results/daily/2026-02-25/daily10/chgnet_pretrained_infer/results.json\nFINAL_METRIC_MAE=4.754132",
+    "stderr_tail": "\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  48%|####8     | 80.115712/166.734239 [00:00<00:00, 801.16MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  96%|#########6| 160.231424/166.734239 [00:00<00:00, 630.74MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 624.11MB/s]                                "
+  },
+  "source_output_path": "results/daily/2026-02-25/daily10/chgnet_pretrained_infer/results.json"
+=======
+    "returncode": -9,
+    "stdout_tail": "[WARN] Adaptive cutoff used for structure idx=2067: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2068: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2077: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2078: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2079: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2080: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2094: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2095: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2102: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2132: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2133: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2832: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2847: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2853: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2855: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2856: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2857: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2858: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2859: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2886: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=2898: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2899: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2903: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=2923: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=3662: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=3665: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3668: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3680: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3684: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3686: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3688: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=3690: cutoff=20.0\n[WARN] Adaptive cutoff used for structure idx=3727: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=4511: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=4556: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=4564: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=5367: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=5373: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=6193: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=6964: cutoff=10.0",
+    "stderr_tail": "\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  32%|###1      | 52.652032/166.734239 [00:00<00:00, 526.51MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  63%|######3   | 105.73823999999999/166.734239 [00:00<00:00, 529.05MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  95%|#########5| 158.64422399999998/166.734239 [00:00<00:00, 420.89MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 430.99MB/s]                                        "
+  },
+  "error_message": "runner exited with code -9",
+  "traceback_or_stderr_tail": "\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  32%|###1      | 52.652032/166.734239 [00:00<00:00, 526.51MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  63%|######3   | 105.73823999999999/166.734239 [00:00<00:00, 529.05MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  95%|#########5| 158.64422399999998/166.734239 [00:00<00:00, 420.89MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 430.99MB/s]                                        "
+>>>>>>> 9a8f3edcf907c61bad8997b803f43ef5b16a3221
+}
