@@ -1,0 +1,41 @@
+{
+  "experiment": "chgnet_head_finetune_freeze",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 623.018,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_head_finetune_freeze",
+  "note": "CHGNet frozen backbone finetuning (Readout + AtomRef only)",
+  "exp_config_path": "configs/experiments/chgnet_head_finetune_freeze.yaml",
+  "exp_params": {
+    "epochs": 10,
+    "lr": "1e-3",
+    "freeze_backbone": true
+  },
+  "output_path": "results/daily/2026-02-25/daily10/chgnet_head_finetune_freeze/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "1d960d7a75349d9ba8659fb172b1f6bae1066fee",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "Tesla T4"
+  },
+  "run": {
+    "returncode": 1,
+    "stdout_tail": "Using device: cuda\n2026-02-25 14:40:39 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-25 14:40:39 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-25 14:43:48 INFO     Dataset 'matbench_mp_e_form loaded.\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\nPreparing disk-backed graph paths for fold=0 ...\nPreparing disk-backed graph paths for fold=1 ...\nPreparing disk-backed graph paths for fold=2 ...\nPreparing disk-backed graph paths for fold=3 ...\nPreparing disk-backed graph paths for fold=4 ...\nGraph cache ready at: data/chgnet_graph_cache/matbench_mp_e_form\n\n--- Starting Fold: 0 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda",
+    "stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 428, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 369, in main\n    train_one_fold(\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 230, in train_one_fold\n    out = model(bg, task=\"e\")\n          ^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/chgnet/model/model.py\", line 357, in forward\n    0 if self.composition_model is None else self.composition_model(graphs)\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/chgnet/model/composition_model.py\", line 114, in forward\n    return self._get_energy(composition_feas)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/chgnet/model/composition_model.py\", line 126, in _get_energy\n    return self.fc(composition_feas).view(-1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/linear.py\", line 134, in forward\n    return F.linear(input, self.weight, self.bias)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Expected all tensors to be on the same device, but got mat2 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_mm)"
+  },
+  "error_message": "runner exited with code 1",
+  "traceback_or_stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 428, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 369, in main\n    train_one_fold(\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 230, in train_one_fold\n    out = model(bg, task=\"e\")\n          ^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/chgnet/model/model.py\", line 357, in forward\n    0 if self.composition_model is None else self.composition_model(graphs)\n                                             ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/chgnet/model/composition_model.py\", line 114, in forward\n    return self._get_energy(composition_feas)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/chgnet/model/composition_model.py\", line 126, in _get_energy\n    return self.fc(composition_feas).view(-1)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1776, in _wrapped_call_impl\n    return self._call_impl(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/module.py\", line 1787, in _call_impl\n    return forward_call(*args, **kwargs)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/torch/nn/modules/linear.py\", line 134, in forward\n    return F.linear(input, self.weight, self.bias)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nRuntimeError: Expected all tensors to be on the same device, but got mat2 is on cuda:0, different from other tensors on cpu (when checking argument in method wrapper_CUDA_mm)"
+}
