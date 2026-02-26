@@ -1,0 +1,43 @@
+{
+  "experiment": "chgnet_full_finetune",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 187.694,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_full_finetune",
+  "note": "Full CHGNet structure finetuning",
+  "exp_config_path": "configs/experiments/chgnet_full_finetune.yaml",
+  "exp_params": {
+    "epochs": 20,
+    "lr": "1e-4",
+    "freeze_backbone": false,
+    "data_fraction": 0.1,
+    "early_stopping_patience": 3
+  },
+  "output_path": "results/daily/2026-02-26/daily10/chgnet_full_finetune/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "a5ce2e194baf2c626961877396cc71b10ee62dd6",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA L4"
+  },
+  "run": {
+    "returncode": 1,
+    "stdout_tail": "Using device: cuda\n2026-02-26 14:56:16 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-26 14:56:16 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-26 14:59:11 INFO     Dataset 'matbench_mp_e_form loaded.\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda",
+    "stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 536, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 435, in main\n    tr_x, tr_y = task.get_train_and_val_data(fold)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/matbench/task.py\", line 262, in get_train_and_val_data\n    fold_key = self.folds_map[fold_number]\n               ~~~~~~~~~~~~~~^^^^^^^^^^^^^\nKeyError: 'fold_0'"
+  },
+  "error_message": "runner exited with code 1",
+  "traceback_or_stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 536, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 435, in main\n    tr_x, tr_y = task.get_train_and_val_data(fold)\n                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/usr/local/lib/python3.12/dist-packages/matbench/task.py\", line 262, in get_train_and_val_data\n    fold_key = self.folds_map[fold_number]\n               ~~~~~~~~~~~~~~^^^^^^^^^^^^^\nKeyError: 'fold_0'"
+}
