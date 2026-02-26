@@ -4,46 +4,46 @@
     "name": "matbench_mp_e_form",
     "scores": {
       "mae": {
-        "mean": 4.7541323091083205,
-        "max": 4.764623010229432,
-        "min": 4.740041059920369,
-        "std": 0.008852839524787591
+        "mean": 4.754132310166354,
+        "max": 4.764623009174284,
+        "min": 4.740041061899258,
+        "std": 0.008852838621762102
       },
       "rmse": {
-        "mean": 5.024483934362559,
-        "max": 5.036172041137731,
-        "min": 5.0093920622201145,
-        "std": 0.00962287777923369
+        "mean": 5.024483935456598,
+        "max": 5.036172039974437,
+        "min": 5.009392064127518,
+        "std": 0.009622876983076421
       },
       "mape": {
-        "mean": 33.68411129652093,
-        "max": 37.007080069554576,
-        "min": 27.069556387944857,
-        "std": 3.7690861940203044
+        "mean": 33.68411129044481,
+        "max": 37.00708005437879,
+        "min": 27.069556404192557,
+        "std": 3.7690861772486968
       },
       "max_error": {
-        "mean": 14.291945409208296,
+        "mean": 14.291945599943158,
         "max": 14.401731917114258,
         "min": 14.137369355265108,
-        "std": 0.10842457549975115
+        "std": 0.10842464835389105
       }
     }
   },
   "status": "success",
-  "metric": 4.7541323091083205,
+  "metric": 4.754132310166354,
   "metric_name": "MAE",
-  "metric_value": 4.7541323091083205,
+  "metric_value": 4.754132310166354,
   "metric_unit": "eV/atom",
   "fold_scores": {
-    "0": 4.754171208441505,
-    "1": 4.740041059920369,
-    "2": 4.749712264965027,
-    "3": 4.762114001985273,
-    "4": 4.764623010229432
+    "0": 4.754171210868254,
+    "1": 4.740041061899258,
+    "2": 4.749712266303045,
+    "3": 4.762114002586932,
+    "4": 4.764623009174284
   },
-  "mean": 4.7541323091083205,
-  "std": 0.008852839524787591,
-  "train_wall_time_sec": 3293.989,
+  "mean": 4.754132310166354,
+  "std": 0.008852838621762102,
+  "train_wall_time_sec": 3950.148,
   "dataset_size": null,
   "num_params": null,
   "seed": 42,
@@ -57,15 +57,15 @@
   "output_path": "results/daily/2026-02-26/daily10/chgnet_pretrained_infer/results.json",
   "env": {
     "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
-    "git_commit": "a280b7e52046328e098b14fa8029f81de8b86eb3",
+    "git_commit": "5715687480e79dcb355f477a3e0408f35c97d3dd",
     "torch": "2.10.0+cu128",
     "cuda_available": true,
     "gpu_type": "NVIDIA L4"
   },
   "run": {
     "returncode": 0,
-    "stdout_tail": "Preparing disk-backed graph paths for fold=1 ...\nPreparing disk-backed graph paths for fold=2 ...\nPreparing disk-backed graph paths for fold=3 ...\nPreparing disk-backed graph paths for fold=4 ...\nGraph cache ready at: data/chgnet_graph_cache/matbench_mp_e_form\n[WARN] Adaptive cutoff triggered 185 times during cache warm-up\n\n--- Starting Fold: 0 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 16:41:47 INFO     Recorded fold matbench_mp_e_form-0 successfully.\nFold 0 MAE: 4.754171\n\n--- Starting Fold: 1 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 16:43:21 INFO     Recorded fold matbench_mp_e_form-1 successfully.\nFold 1 MAE: 4.740041\n\n--- Starting Fold: 2 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 16:44:55 INFO     Recorded fold matbench_mp_e_form-2 successfully.\nFold 2 MAE: 4.749712\n\n--- Starting Fold: 3 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 16:46:30 INFO     Recorded fold matbench_mp_e_form-3 successfully.\nFold 3 MAE: 4.762114\n\n--- Starting Fold: 4 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-25 16:48:04 INFO     Recorded fold matbench_mp_e_form-4 successfully.\nFold 4 MAE: 4.764623\n\nFinal mean MAE: 4.7541323091083205\nWrote results to results/daily/2026-02-26/daily10/chgnet_pretrained_infer/results.json\nFINAL_METRIC_MAE=4.754132",
-    "stderr_tail": "\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  47%|####6     | 78.35647999999999/166.734239 [00:00<00:00, 783.56MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  96%|#########6| 160.397312/166.734239 [00:00<00:00, 805.23MB/s]       \nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 775.09MB/s]                                "
+    "stdout_tail": "[WARN] Adaptive cutoff used for structure idx=109606: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=109607: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=109810: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=110430: cutoff=10.0\n[WARN] Adaptive cutoff used for structure idx=113418: cutoff=10.0\nChunked graph cache ready: data/chgnet_graph_cache/matbench_mp_e_form (new=133000, adaptive=185)\n\n--- Starting Fold: 0 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-26 12:33:28 INFO     Recorded fold matbench_mp_e_form-0 successfully.\nFold 0 MAE: 4.754171\n\n--- Starting Fold: 1 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-26 12:36:46 INFO     Recorded fold matbench_mp_e_form-1 successfully.\nFold 1 MAE: 4.740041\n\n--- Starting Fold: 2 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-26 12:40:01 INFO     Recorded fold matbench_mp_e_form-2 successfully.\nFold 2 MAE: 4.749712\n\n--- Starting Fold: 3 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-26 12:43:20 INFO     Recorded fold matbench_mp_e_form-3 successfully.\nFold 3 MAE: 4.762114\n\n--- Starting Fold: 4 ---\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n2026-02-26 12:46:37 INFO     Recorded fold matbench_mp_e_form-4 successfully.\nFold 4 MAE: 4.764623\n\nFinal mean MAE: 4.754132310166354\nWrote results to results/daily/2026-02-26/daily10/chgnet_pretrained_infer/results.json\nFINAL_METRIC_MAE=4.754132",
+    "stderr_tail": "\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  46%|####6     | 76.832768/166.734239 [00:00<00:00, 768.32MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  94%|#########4| 156.766208/166.734239 [00:00<00:00, 786.56MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 760.09MB/s]                                "
   },
   "source_output_path": "results/daily/2026-02-26/daily10/chgnet_pretrained_infer/results.json"
 }
