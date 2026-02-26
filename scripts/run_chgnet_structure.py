@@ -421,10 +421,28 @@ def main():
     task.load()
 
     folds = cfg_raw.get("task", {}).get("folds", "all")
-    folds_to_run = task.folds if folds == "all" else (folds if isinstance(folds, list) else [folds])
+    if folds == "all":
+        folds_to_run = task.folds
+    else:
+        folds_to_run = folds if isinstance(folds, list) else [folds]
+        normalized = []
+        for f in folds_to_run:
+            if isinstance(f, str) and f.startswith("fold_"):
+                try:
+                    normalized.append(int(f.split("_", 1)[1]))
+                    continue
+                except Exception:
+                    pass
+            normalized.append(f)
+        folds_to_run = normalized
 
     chunk_size = int(extras.get("graph_cache_chunk_size", 1000))
-    graph_cache = ChunkedGraphCache(Path("data/chgnet_graph_cache") / task_name, chunk_size=chunk_size)
+    drive_root = Path("/content/drive/MyDrive")
+    if drive_root.exists():
+        cache_root = drive_root / "MALTbot-cache" / "chgnet_graph_cache"
+    else:
+        cache_root = Path("data/chgnet_graph_cache")
+    graph_cache = ChunkedGraphCache(cache_root / task_name, chunk_size=chunk_size)
 
     converter_model = CHGNet.load()
     converter = converter_model.graph_converter
