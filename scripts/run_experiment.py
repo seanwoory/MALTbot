@@ -286,6 +286,20 @@ def main() -> None:
         extras["tta_samples"] = int(params["tta_samples"])
     if "tta_noise_std" in params:
         extras["tta_noise_std"] = float(params["tta_noise_std"])
+    if "data_fraction" in params:
+        extras["data_fraction"] = float(params["data_fraction"])
+    if "train_fraction" in params:
+        extras["train_fraction"] = float(params["train_fraction"])
+    if "val_fraction" in params:
+        extras["val_fraction"] = float(params["val_fraction"])
+    if "early_stopping_patience" in params:
+        extras["early_stopping_patience"] = int(params["early_stopping_patience"])
+    if "folds" in params:
+        f = params["folds"]
+        if isinstance(f, str):
+            base_cfg.setdefault("task", {})["folds"] = [f]
+        elif isinstance(f, list):
+            base_cfg.setdefault("task", {})["folds"] = f
 
     if "seeds" in params and isinstance(params["seeds"], list):
         extras["ensemble_seeds"] = [int(s) for s in params["seeds"]]
