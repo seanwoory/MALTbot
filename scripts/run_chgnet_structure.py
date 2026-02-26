@@ -302,15 +302,15 @@ def train_one_fold(
     # Agile mode: fractional dataset sampling
     tf = min(max(cfg.train_fraction, 0.0), 1.0)
     vf = min(max(cfg.val_fraction, 0.0), 1.0)
-    if tf < 1.0 and len(tr_paths) > 1:
-        keep = max(1, int(len(tr_paths) * tf))
-        pick = np.random.choice(len(tr_paths), size=keep, replace=False)
-        tr_paths = [tr_paths[i] for i in pick]
+    if tf < 1.0 and len(tr_refs) > 1:
+        keep = max(1, int(len(tr_refs) * tf))
+        pick = np.random.choice(len(tr_refs), size=keep, replace=False)
+        tr_refs = [tr_refs[i] for i in pick]
         tr_targets = [tr_targets[i] for i in pick]
-    if vf < 1.0 and len(va_paths) > 1:
-        keep = max(1, int(len(va_paths) * vf))
-        pick = np.random.choice(len(va_paths), size=keep, replace=False)
-        va_paths = [va_paths[i] for i in pick]
+    if vf < 1.0 and len(va_refs) > 1:
+        keep = max(1, int(len(va_refs) * vf))
+        pick = np.random.choice(len(va_refs), size=keep, replace=False)
+        va_refs = [va_refs[i] for i in pick]
         va_targets = [va_targets[i] for i in pick]
 
     train_loader = DataLoader(
