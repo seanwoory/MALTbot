@@ -36,6 +36,9 @@ class TrainConfig:
     weight_decay: float
     freeze_backbone: bool = False
     mode: str = "finetune"  # finetune | pretrained
+    train_fraction: float = 1.0
+    val_fraction: float = 1.0
+    early_stopping_patience: int = 5
 
 
 def set_seed(seed: int) -> None:
@@ -236,6 +239,20 @@ def train_one_fold(
     va_paths = [train_graph_paths[i] for i in val_idx]
     va_targets = [train_targets[i] for i in val_idx]
 
+    # Agile mode: fractional dataset sampling
+    tf = min(max(cfg.train_fraction, 0.0), 1.0)
+    vf = min(max(cfg.val_fraction, 0.0), 1.0)
+    if tf < 1.0 and len(tr_paths) > 1:
+        keep = max(1, int(len(tr_paths) * tf))
+        pick = np.random.choice(len(tr_paths), size=keep, replace=False)
+        tr_paths = [tr_paths[i] for i in pick]
+        tr_targets = [tr_targets[i] for i in pick]
+    if vf < 1.0 and len(va_paths) > 1:
+        keep = max(1, int(len(va_paths) * vf))
+        pick = np.random.choice(len(va_paths), size=keep, replace=False)
+        va_paths = [va_paths[i] for i in pick]
+        va_targets = [va_targets[i] for i in pick]
+
     train_loader = DataLoader(
         GraphFileDataset(tr_paths, tr_targets),
         batch_size=cfg.batch_size,
@@ -249,6 +266,7 @@ def train_one_fold(
     best_mae = float("inf")
     history_rows = []
     history_csv.parent.mkdir(parents=True, exist_ok=True)
+    no_improve_epochs = 0
 
     for ep in range(1, cfg.epochs + 1):
         model.train()
@@ -275,8 +293,17 @@ def train_one_fold(
 
         if val_mae < best_mae:
             best_mae = val_mae
+            no_improve_epochs = 0
             ckpt_path.parent.mkdir(parents=True, exist_ok=True)
             torch.save(model.state_dict(), ckpt_path)
+        else:
+            no_improve_epochs += 1
+            if no_improve_epochs >= max(1, cfg.early_stopping_patience):
+                print(
+                    f"Early stopping at epoch {ep}: no val MAE improvement for "
+                    f"{cfg.early_stopping_patience} epochs"
+                )
+                break
 
     with history_csv.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=["epoch", "train_loss", "val_loss", "val_mae"])
@@ -319,6 +346,9 @@ def main():
         weight_decay=float(train_dict.get("weight_decay", 1e-5)),
         freeze_backbone=bool(extras.get("freeze_backbone", False)),
         mode=str(extras.get("mode", "finetune")),
+        train_fraction=float(extras.get("train_fraction", extras.get("data_fraction", 1.0))),
+        val_fraction=float(extras.get("val_fraction", extras.get("data_fraction", 1.0))),
+        early_stopping_patience=int(extras.get("early_stopping_patience", 5)),
     )
 
     device_cfg = cfg_raw.get("runtime", {}).get("device", "auto")
