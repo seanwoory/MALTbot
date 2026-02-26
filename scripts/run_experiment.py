@@ -213,7 +213,8 @@ def main() -> None:
 
     exp, exp_path = load_exp(args)
     exp_name = exp.get("name") or (Path(args.exp).stem if args.exp else args.exp_name)
-    task = exp.get("task", "matbench_mp_e_form")
+    task_obj = exp.get("task", "matbench_mp_e_form")
+    task = task_obj.get("name", "matbench_mp_e_form") if isinstance(task_obj, dict) else task_obj
     seed = int(exp.get("seed", 42))
     model_config = exp.get("model_config", exp_name)
     note = exp.get("note", "")
@@ -259,6 +260,8 @@ def main() -> None:
     base_cfg["date"] = date
     base_cfg["output_root"] = "results/daily"
     base_cfg.setdefault("task", {})["name"] = task
+    if isinstance(task_obj, dict) and "folds" in task_obj:
+        base_cfg.setdefault("task", {})["folds"] = task_obj["folds"]
 
     # Apply experiment-specific levers from YAML params.
     params = exp.get("params") or {}

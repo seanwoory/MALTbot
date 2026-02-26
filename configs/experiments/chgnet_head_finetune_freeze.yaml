@@ -1,6 +1,8 @@
 name: chgnet_head_finetune_freeze
 enabled: true
-task: matbench_mp_e_form
+task:
+  name: matbench_mp_e_form
+  folds: ['fold_0']
 runner: chgnet_structure
 seed: 42
 model_config: chgnet_head_finetune_freeze
@@ -9,3 +11,5 @@ params:
   epochs: 10
   lr: 1e-3
   freeze_backbone: true
+  data_fraction: 0.1
+  early_stopping_patience: 3
