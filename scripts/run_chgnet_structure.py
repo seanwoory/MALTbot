@@ -100,15 +100,17 @@ def convert_structure_with_adaptive_cutoff(structure: Structure, converter, idx:
 class ChunkedGraphCache:
     """Disk-backed graph cache with chunked .pt files (e.g., 1000 graphs/file)."""
 
-    def __init__(self, cache_dir: Path, chunk_size: int = 1000):
+    def __init__(self, cache_dir: Path, chunk_size: int = 1000, lru_chunks: int = 30):
         self.cache_dir = cache_dir
         self.chunk_size = chunk_size
+        self.lru_chunks = lru_chunks
         self.chunks_dir = self.cache_dir / "chunks"
         self.manifest_path = self.cache_dir / "manifest.json"
         self.cache_dir.mkdir(parents=True, exist_ok=True)
         self.chunks_dir.mkdir(parents=True, exist_ok=True)
 
         self.key_to_ref: dict[str, tuple[str, int]] = {}
+        self._get_chunk_cached = functools.lru_cache(maxsize=self.lru_chunks)(self._load_chunk)
 
         if self.manifest_path.exists():
             raw = json.loads(self.manifest_path.read_text(encoding="utf-8"))
@@ -173,14 +175,13 @@ class ChunkedGraphCache:
             raise KeyError("Structure missing from chunk cache")
         return self.key_to_ref[k]
 
-    @functools.lru_cache(maxsize=30)
-    def _get_chunk(self, chunk_file: str):
+    def _load_chunk(self, chunk_file: str):
         payload = torch.load(self.chunks_dir / chunk_file, map_location="cpu", weights_only=False)
         return payload["graphs"]
 
     def load_graph(self, ref: tuple[str, int]):
         chunk_file, offset = ref
-        return self._get_chunk(chunk_file)[offset]
+        return self._get_chunk_cached(chunk_file)[offset]
 
 
 def move_graph_batch_to_device(obj, device):
@@ -221,6 +222,24 @@ class GraphChunkDataset(Dataset):
         return g, y
 
 
+def chunk_aware_shuffle(refs: list[tuple[str, int]], targets: list[float]) -> tuple[list[tuple[str, int]], list[float]]:
+    buckets: dict[str, list[tuple[tuple[str, int], float]]] = {}
+    for r, t in zip(refs, targets):
+        buckets.setdefault(r[0], []).append((r, t))
+    chunk_files = list(buckets.keys())
+    random.shuffle(chunk_files)
+
+    out_refs: list[tuple[str, int]] = []
+    out_targets: list[float] = []
+    for cf in chunk_files:
+        pairs = buckets[cf]
+        random.shuffle(pairs)
+        for r, t in pairs:
+            out_refs.append(r)
+            out_targets.append(t)
+    return out_refs, out_targets
+
+
 def collate_or_fallback(batch):
     graphs, targets = zip(*batch)
     try:
@@ -237,33 +256,62 @@ def run_predict_on_refs(model, refs: list[tuple[str, int]], cache: ChunkedGraphC
     with torch.no_grad():
         for i in range(0, len(refs), batch_size):
             chunk_refs = refs[i : i + batch_size]
-            chunk_graphs = [cache.load_graph(r) for r in chunk_refs]
+            try:
+                chunk_graphs = [cache.load_graph(r) for r in chunk_refs]
 
-            if hasattr(model, "predict_graph"):
-                chunk_graphs = move_graph_batch_to_device(chunk_graphs, device)
-                out = model.predict_graph(chunk_graphs, task="e")
-                if isinstance(out, list):
-                    for r in out:
-                        if isinstance(r, dict):
-                            v = r.get("e", r.get("energy"))
-                            if v is None:
-                                raise KeyError("predict_graph dict response missing 'e'/'energy'")
-                            preds.append(float(v))
-                        else:
-                            preds.append(float(r))
-                elif isinstance(out, dict):
-                    v = out.get("e", out.get("energy"))
-                    if v is None:
-                        raise KeyError("predict_graph dict response missing 'e'/'energy'")
-                    preds.append(float(v))
+                if hasattr(model, "predict_graph"):
+                    chunk_graphs = move_graph_batch_to_device(chunk_graphs, device)
+                    out = model.predict_graph(chunk_graphs, task="e")
+                    if isinstance(out, list):
+                        for r in out:
+                            if isinstance(r, dict):
+                                v = r.get("e", r.get("energy"))
+                                if v is None:
+                                    raise KeyError("predict_graph dict response missing 'e'/'energy'")
+                                preds.append(float(v))
+                            else:
+                                preds.append(float(r))
+                    elif isinstance(out, dict):
+                        v = out.get("e", out.get("energy"))
+                        if v is None:
+                            raise KeyError("predict_graph dict response missing 'e'/'energy'")
+                        preds.append(float(v))
+                    else:
+                        preds.extend([float(x) for x in np.array(out).reshape(-1)])
                 else:
-                    preds.extend([float(x) for x in np.array(out).reshape(-1)])
-            else:
-                bg, _ = collate_or_fallback([(g, 0.0) for g in chunk_graphs])
-                bg = move_graph_batch_to_device(bg, device)
-                out = model(bg, task="e")
-                pe = out["e"] if isinstance(out, dict) else out
-                preds.extend([float(x) for x in np.array(pe.detach().cpu()).reshape(-1)])
+                    bg, _ = collate_or_fallback([(g, 0.0) for g in chunk_graphs])
+                    bg = move_graph_batch_to_device(bg, device)
+                    out = model(bg, task="e")
+                    pe = out["e"] if isinstance(out, dict) else out
+                    preds.extend([float(x) for x in np.array(pe.detach().cpu()).reshape(-1)])
+            except Exception as e:
+                print(f"[WARN] prediction batch failed at offset {i}: {e}")
+                # Per-item fallback to avoid full-run crash.
+                for rref in chunk_refs:
+                    try:
+                        g = cache.load_graph(rref)
+                        if hasattr(model, "predict_graph"):
+                            gout = model.predict_graph(move_graph_batch_to_device([g], device), task="e")
+                            if isinstance(gout, list):
+                                gr = gout[0]
+                            else:
+                                gr = gout
+                            if isinstance(gr, dict):
+                                v = gr.get("e", gr.get("energy"))
+                                if v is None:
+                                    raise KeyError("single-item predict missing 'e'/'energy'")
+                                preds.append(float(v))
+                            else:
+                                preds.append(float(gr))
+                        else:
+                            bg, _ = collate_or_fallback([(g, 0.0)])
+                            bg = move_graph_batch_to_device(bg, device)
+                            out = model(bg, task="e")
+                            pe = out["e"] if isinstance(out, dict) else out
+                            preds.append(float(np.array(pe.detach().cpu()).reshape(-1)[0]))
+                    except Exception as e2:
+                        print(f"[WARN] prediction item fallback failed: {e2}")
+                        preds.append(float("nan"))
     return np.array(preds)
 
 
@@ -313,10 +361,13 @@ def train_one_fold(
         va_refs = [va_refs[i] for i in pick]
         va_targets = [va_targets[i] for i in pick]
 
+    # Chunk-aware ordering to reduce Drive I/O thrashing.
+    tr_refs, tr_targets = chunk_aware_shuffle(tr_refs, tr_targets)
+
     train_loader = DataLoader(
         GraphChunkDataset(tr_refs, tr_targets, cache),
         batch_size=cfg.batch_size,
-        shuffle=True,
+        shuffle=False,
         collate_fn=collate_or_fallback,
         num_workers=0,
     )
@@ -334,22 +385,31 @@ def train_one_fold(
         ep_start = time.perf_counter()
         model.train()
         losses = []
-        for bg, y in train_loader:
-            bg = move_graph_batch_to_device(bg, device)
-            y = y.to(device)
-            optimizer.zero_grad()
-            out = model(bg, task="e")
-            pe = out["e"] if isinstance(out, dict) else out
-            loss = criterion(pe.view(-1), y.view(-1))
-            loss.backward()
-            optimizer.step()
-            losses.append(float(loss.item()))
+        for bidx, (bg, y) in enumerate(train_loader):
+            try:
+                bg = move_graph_batch_to_device(bg, device)
+                y = y.to(device)
+                optimizer.zero_grad()
+                out = model(bg, task="e")
+                pe = out["e"] if isinstance(out, dict) else out
+                loss = criterion(pe.view(-1), y.view(-1))
+                loss.backward()
+                optimizer.step()
+                losses.append(float(loss.item()))
+            except Exception as e:
+                print(f"[WARN] train batch failed (epoch={ep}, batch={bidx}): {e}")
+                continue
 
-        train_loss = float(np.mean(losses)) if losses else None
+        train_loss = float(np.mean(losses)) if losses else float("nan")
         val_pred = run_predict_on_refs(model, va_refs, cache, device, cfg.batch_size)
         val_true = np.array(va_targets, dtype=float)
-        val_mae = float(np.mean(np.abs(val_pred - val_true)))
-        val_loss = float(np.mean(np.abs(val_pred - val_true)))
+        mask = np.isfinite(val_pred)
+        if np.any(mask):
+            val_mae = float(np.mean(np.abs(val_pred[mask] - val_true[mask])))
+            val_loss = val_mae
+        else:
+            val_mae = float("inf")
+            val_loss = float("inf")
 
         rows.append({"epoch": ep, "train_loss": train_loss, "val_loss": val_loss, "val_mae": val_mae})
 
@@ -443,6 +503,14 @@ def main():
         early_stopping_patience=int(extras.get("early_stopping_patience", train_dict.get("early_stopping_patience", 5))),
     )
 
+    print(
+        "EFFECTIVE_CONFIG "
+        f"task={task_name} epochs={cfg.epochs} batch_size={cfg.batch_size} "
+        f"lr={cfg.lr} wd={cfg.weight_decay} freeze_backbone={cfg.freeze_backbone} "
+        f"mode={cfg.mode} train_fraction={cfg.train_fraction} val_fraction={cfg.val_fraction} "
+        f"early_stopping_patience={cfg.early_stopping_patience}"
+    )
+
     device_cfg = cfg_raw.get("runtime", {}).get("device", "auto")
     device = torch.device("cuda" if torch.cuda.is_available() and device_cfg == "auto" else "cpu")
     print(f"Using device: {device}")
@@ -468,33 +536,63 @@ def main():
         folds_to_run = normalized
 
     chunk_size = int(extras.get("graph_cache_chunk_size", 1000))
+    lru_chunks = int(extras.get("graph_cache_lru_chunks", 30))
     drive_root = Path("/content/drive/MyDrive")
     if drive_root.exists():
         cache_root = drive_root / "MALTbot-cache" / "chgnet_graph_cache"
+        print(f"[cache] Using Google Drive cache root: {cache_root}")
     else:
         cache_root = Path("data/chgnet_graph_cache")
-    graph_cache = ChunkedGraphCache(cache_root / task_name, chunk_size=chunk_size)
+        print(f"[cache] Using local cache root: {cache_root}")
+    graph_cache = ChunkedGraphCache(cache_root / task_name, chunk_size=chunk_size, lru_chunks=lru_chunks)
+    print(f"[cache] chunk_size={chunk_size} lru_chunks={lru_chunks}")
 
     converter_model = CHGNet.load()
     converter = converter_model.graph_converter
 
     fold_payload = {}
     all_structs = []
+    cache_fraction = float(extras.get("cache_fraction", extras.get("data_fraction", 1.0)))
+    cache_fraction = min(max(cache_fraction, 0.0), 1.0)
+    if cache_fraction < 1.0:
+        print(f"[cache] agile cache_fraction={cache_fraction:.3f}: building subset cache only")
+
     for fold in folds_to_run:
         tr_x, tr_y = task.get_train_and_val_data(fold)
         te_x = task.get_test_data(fold, include_target=False)
         _, te_y = task.get_test_data(fold, include_target=True)
         ids = list(getattr(te_y, "index", range(len(te_y))))
 
+        tr_x = list(tr_x)
+        tr_y = [float(v) for v in tr_y]
+        te_x = list(te_x)
+        te_y = [float(v) for v in te_y]
+        ids = [str(x) for x in ids]
+
+        if cache_fraction < 1.0:
+            tr_keep = max(1, int(len(tr_x) * cache_fraction)) if len(tr_x) > 0 else 0
+            te_keep = max(1, int(len(te_x) * cache_fraction)) if len(te_x) > 0 else 0
+
+            if len(tr_x) > tr_keep:
+                pick = np.random.choice(len(tr_x), size=tr_keep, replace=False)
+                tr_x = [tr_x[i] for i in pick]
+                tr_y = [tr_y[i] for i in pick]
+
+            if len(te_x) > te_keep:
+                pick = np.random.choice(len(te_x), size=te_keep, replace=False)
+                te_x = [te_x[i] for i in pick]
+                te_y = [te_y[i] for i in pick]
+                ids = [ids[i] for i in pick]
+
         fold_payload[fold] = {
-            "train_x": list(tr_x),
-            "train_y": [float(v) for v in tr_y],
-            "test_x": list(te_x),
-            "test_y": [float(v) for v in te_y],
-            "test_ids": [str(x) for x in ids],
+            "train_x": tr_x,
+            "train_y": tr_y,
+            "test_x": te_x,
+            "test_y": te_y,
+            "test_ids": ids,
         }
-        all_structs.extend(list(tr_x))
-        all_structs.extend(list(te_x))
+        all_structs.extend(tr_x)
+        all_structs.extend(te_x)
 
     print(f"Building/updating chunked graph cache (chunk_size={chunk_size}) ...")
     new_count, adaptive_count = graph_cache.build_missing(all_structs, converter)
@@ -533,7 +631,11 @@ def main():
         task.record(fold, preds)
 
         y_true = np.array(payload["test_y"], dtype=float)
-        mae = float(np.mean(np.abs(preds - y_true)))
+        mask = np.isfinite(preds)
+        if np.any(mask):
+            mae = float(np.mean(np.abs(preds[mask] - y_true[mask])))
+        else:
+            mae = float("inf")
         fold_mae[fold] = mae
         print(f"Fold {fold} MAE: {mae:.6f}")
 

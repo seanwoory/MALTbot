@@ -354,13 +354,16 @@ def main() -> None:
     stdout = ""
     stderr_tail = ""
     try:
+        child_env = os.environ.copy()
+        child_env["PYTHONUNBUFFERED"] = "1"
         proc = subprocess.Popen(
-            [sys.executable, target_script, "--config", temp_cfg],
+            [sys.executable, "-u", target_script, "--config", temp_cfg],
             cwd=REPO,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
+            env=child_env,
         )
 
         out_lines: list[str] = []
