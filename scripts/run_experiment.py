@@ -352,25 +352,37 @@ def main() -> None:
 
     t0 = time.perf_counter()
     stdout = ""
+    stderr_tail = ""
     try:
-        proc = subprocess.run(
+        proc = subprocess.Popen(
             [sys.executable, target_script, "--config", temp_cfg],
             cwd=REPO,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
             text=True,
-            capture_output=True,
-            check=False,
+            bufsize=1,
         )
-        stdout = proc.stdout or ""
+
+        out_lines: list[str] = []
+        if proc.stdout is not None:
+            for line in proc.stdout:
+                print(line, end="")  # real-time streaming to caller (e.g., Colab)
+                out_lines.append(line)
+
+        returncode = proc.wait()
+        stdout = "".join(out_lines)
+        stderr_tail = "\n".join(stdout.splitlines()[-40:])
+
         payload["train_wall_time_sec"] = round(time.perf_counter() - t0, 3)
         payload["run"] = {
-            "returncode": proc.returncode,
+            "returncode": returncode,
             "stdout_tail": "\n".join(stdout.splitlines()[-40:]),
-            "stderr_tail": "\n".join((proc.stderr or "").splitlines()[-40:]),
+            "stderr_tail": stderr_tail,
         }
-        if proc.returncode != 0:
+        if returncode != 0:
             payload["status"] = "error"
             payload["metric"] = "ERROR"
-            payload["error_message"] = f"runner exited with code {proc.returncode}"
+            payload["error_message"] = f"runner exited with code {returncode}"
             payload["traceback_or_stderr_tail"] = payload["run"]["stderr_tail"]
     except Exception as e:
         payload["train_wall_time_sec"] = round(time.perf_counter() - t0, 3)
