@@ -291,6 +291,8 @@ def main() -> None:
         extras["tta_noise_std"] = float(params["tta_noise_std"])
     if "data_fraction" in params:
         extras["data_fraction"] = float(params["data_fraction"])
+    if "cache_fraction" in params:
+        extras["cache_fraction"] = float(params["cache_fraction"])
     if "train_fraction" in params:
         extras["train_fraction"] = float(params["train_fraction"])
     if "val_fraction" in params:

@@ -359,6 +359,9 @@ def train_one_fold(
     va_refs = [train_refs[i] for i in val_idx]
     va_targets = [train_targets[i] for i in val_idx]
 
+    base_n_train = len(tr_refs)
+    base_n_val = len(va_refs)
+
     # Agile mode: fractional dataset sampling
     tf = min(max(cfg.train_fraction, 0.0), 1.0)
     vf = min(max(cfg.val_fraction, 0.0), 1.0)
@@ -372,6 +375,11 @@ def train_one_fold(
         pick = np.random.choice(len(va_refs), size=keep, replace=False)
         va_refs = [va_refs[i] for i in pick]
         va_targets = [va_targets[i] for i in pick]
+
+    print(
+        f"EFFECTIVE_SPLIT n_train={len(tr_refs)}/{base_n_train} "
+        f"n_val={len(va_refs)}/{base_n_val}"
+    )
 
     # Chunk-aware ordering to reduce Drive I/O thrashing.
     tr_refs, tr_targets = chunk_aware_shuffle(tr_refs, tr_targets)
@@ -641,6 +649,8 @@ def main():
                 f"fold={fold} has no usable data after cache filtering "
                 f"(train={len(train_pairs)}, test={len(test_pairs)})."
             )
+
+        print(f"EFFECTIVE_FOLD_DATA fold={fold} n_train={len(train_pairs)} n_test={len(test_pairs)}")
 
         train_refs = [graph_cache.ref_for_structure(s) for s, _ in train_pairs]
         train_targets = [y for _, y in train_pairs]

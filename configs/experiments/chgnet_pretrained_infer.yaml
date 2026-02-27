@@ -6,8 +6,9 @@ task:
 runner: chgnet_structure
 seed: 42
 model_config: chgnet_pretrained_infer
-note: Zero-shot pretrained CHGNet inference
+note: Zero-shot pretrained CHGNet inference (ultra-fast agile)
 params:
   epochs: 0
   mode: pretrained
-  data_fraction: 0.1
+  data_fraction: 0.001
+  cache_fraction: 0.001
