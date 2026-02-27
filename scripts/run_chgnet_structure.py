@@ -397,8 +397,9 @@ def main():
     set_seed(seed)
 
     task_name = cfg_raw["task"]["name"]
-    train_dict = cfg_raw.get("training", {})
-    extras = cfg_raw.get("training_extras", {})
+    params_dict = cfg_raw.get("params", {})
+    train_dict = cfg_raw.get("training", params_dict)
+    extras = cfg_raw.get("training_extras", params_dict)
 
     cfg = TrainConfig(
         epochs=int(train_dict.get("epochs", 20)),
