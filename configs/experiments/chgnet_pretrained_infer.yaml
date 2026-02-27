@@ -1,6 +1,8 @@
 name: chgnet_pretrained_infer
 enabled: true
-task: matbench_mp_e_form
+task:
+  name: matbench_mp_e_form
+  folds: ['fold_0']
 runner: chgnet_structure
 seed: 42
 model_config: chgnet_pretrained_infer
@@ -8,3 +10,4 @@ note: Zero-shot pretrained CHGNet inference
 params:
   epochs: 0
   mode: pretrained
+  data_fraction: 0.1
