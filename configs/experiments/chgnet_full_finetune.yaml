@@ -6,10 +6,11 @@ task:
 runner: chgnet_structure
 seed: 42
 model_config: chgnet_full_finetune
-note: Full CHGNet structure finetuning
+note: Full CHGNet structure finetuning (ultra-fast agile)
 params:
-  epochs: 20
+  epochs: 2
   lr: 1e-4
   freeze_backbone: false
-  data_fraction: 0.1
+  data_fraction: 0.001
+  cache_fraction: 0.001
   early_stopping_patience: 3

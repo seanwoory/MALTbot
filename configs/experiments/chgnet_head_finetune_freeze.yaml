@@ -6,10 +6,11 @@ task:
 runner: chgnet_structure
 seed: 42
 model_config: chgnet_head_finetune_freeze
-note: CHGNet frozen backbone finetuning (Readout + AtomRef only)
+note: CHGNet frozen backbone finetuning (ultra-fast smoke)
 params:
-  epochs: 10
+  epochs: 1
   lr: 1e-3
   freeze_backbone: true
-  data_fraction: 0.1
+  data_fraction: 0.001
+  cache_fraction: 0.001
   early_stopping_patience: 3
