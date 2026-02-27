@@ -393,9 +393,98 @@ def resolve_out_dir(cfg_raw: dict) -> Path:
     return out_root / date_str / run_name
 
 
+def _validate_effective_config_for_agile(cfg: TrainConfig, folds_to_run) -> list[str]:
+    issues = []
+    folds_norm = list(folds_to_run) if isinstance(folds_to_run, list) else [folds_to_run]
+    if folds_norm != [0]:
+        issues.append(f"folds must be [0] for ultra-light preflight, got {folds_to_run}")
+    if cfg.train_fraction > 0.2 or cfg.val_fraction > 0.2:
+        issues.append(
+            f"train/val fraction must be <=0.2 for agile run, got train={cfg.train_fraction}, val={cfg.val_fraction}"
+        )
+    if not (1 <= cfg.epochs <= 30):
+        issues.append(f"epochs out of bounds (1..30): {cfg.epochs}")
+    if not isinstance(cfg.freeze_backbone, bool):
+        issues.append("freeze_backbone must be boolean")
+    return issues
+
+
+def _ensure_writable_dir(path: Path) -> bool:
+    try:
+        path.mkdir(parents=True, exist_ok=True)
+        test = path / ".write_test"
+        test.write_text("ok", encoding="utf-8")
+        test.unlink(missing_ok=True)
+        return True
+    except Exception:
+        return False
+
+
+def _run_preflight(cfg_raw: dict, cfg: TrainConfig, folds_to_run, cache_root: Path, graph_cache: ChunkedGraphCache, out_dir: Path, deep: bool = False) -> int:
+    print("=== PREFLIGHT START ===")
+    print(f"preflight_mode={'deep' if deep else 'fast'}")
+
+    # Keep checks ultra lightweight
+    ok = True
+
+    # 1) import chgnet already handled by CHGNet is not None
+    print("[ok] chgnet import")
+
+    # 2) CUDA availability
+    cuda_ok = bool(torch.cuda.is_available())
+    print(f"[info] cuda_available={cuda_ok}")
+
+    # 3) EFFECTIVE_CONFIG print + validation
+    print(
+        "EFFECTIVE_CONFIG "
+        f"epochs={cfg.epochs} batch_size={cfg.batch_size} lr={cfg.lr} wd={cfg.weight_decay} "
+        f"freeze_backbone={cfg.freeze_backbone} train_fraction={cfg.train_fraction} val_fraction={cfg.val_fraction} "
+        f"folds={(list(folds_to_run) if isinstance(folds_to_run, list) else [folds_to_run])}"
+    )
+    issues = _validate_effective_config_for_agile(cfg, folds_to_run)
+    if issues:
+        ok = False
+        for i in issues:
+            print(f"[error] {i}")
+    else:
+        print("[ok] effective config validation")
+
+    # 4) cache_root not on Drive
+    if str(cache_root).startswith("/content/drive"):
+        ok = False
+        print(f"[error] cache_root must not be on Drive for ultra-light preflight: {cache_root}")
+    else:
+        print(f"[ok] cache_root={cache_root}")
+
+    # 5) cache manifest exists
+    if graph_cache.manifest_path.exists():
+        print(f"[ok] cache manifest exists: {graph_cache.manifest_path}")
+    else:
+        ok = False
+        print(f"[error] cache manifest missing: {graph_cache.manifest_path}")
+
+    # 6) output dir writable
+    if _ensure_writable_dir(out_dir):
+        print(f"[ok] output dir writable: {out_dir}")
+    else:
+        ok = False
+        print(f"[error] output dir not writable: {out_dir}")
+
+    if deep:
+        print("[info] preflight-deep placeholder: heavy checks intentionally optional (up to 120s)")
+
+    if ok:
+        print("=== PREFLIGHT PASS ===")
+        return 0
+    print("=== PREFLIGHT FAIL ===")
+    return 2
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", required=True)
+    ap.add_argument("--preflight", action="store_true", help="Run ultra-light preflight checks and exit")
+    ap.add_argument("--preflight-deep", action="store_true", help="Run preflight plus optional deeper checks")
     args = ap.parse_args()
 
     if CHGNet is None:
@@ -447,13 +536,9 @@ def main():
     device = torch.device("cuda" if torch.cuda.is_available() and device_cfg == "auto" else "cpu")
     print(f"Using device: {device}")
 
-    mb = MatbenchBenchmark(subset=[task_name], autoload=False)
-    task = next(iter(mb.tasks))
-    task.load()
-
     folds = cfg_raw.get("task", {}).get("folds", "all")
     if folds == "all":
-        folds_to_run = task.folds
+        folds_to_run = "all"
     else:
         folds_to_run = folds if isinstance(folds, list) else [folds]
         normalized = []
@@ -474,6 +559,26 @@ def main():
     else:
         cache_root = Path("data/chgnet_graph_cache")
     graph_cache = ChunkedGraphCache(cache_root / task_name, chunk_size=chunk_size)
+
+    out_dir = resolve_out_dir(cfg_raw)
+
+    if args.preflight or args.preflight_deep:
+        rc = _run_preflight(
+            cfg_raw=cfg_raw,
+            cfg=cfg,
+            folds_to_run=folds_to_run,
+            cache_root=cache_root,
+            graph_cache=graph_cache,
+            out_dir=out_dir,
+            deep=bool(args.preflight_deep),
+        )
+        raise SystemExit(rc)
+
+    mb = MatbenchBenchmark(subset=[task_name], autoload=False)
+    task = next(iter(mb.tasks))
+    task.load()
+    if folds_to_run == "all":
+        folds_to_run = task.folds
 
     converter_model = CHGNet.load()
     converter = converter_model.graph_converter
@@ -500,7 +605,6 @@ def main():
     new_count, adaptive_count = graph_cache.build_missing(all_structs, converter)
     print(f"Chunked graph cache ready: {graph_cache.cache_dir} (new={new_count}, adaptive={adaptive_count})")
 
-    out_dir = resolve_out_dir(cfg_raw)
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fold_mae = {}
