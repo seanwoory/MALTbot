@@ -8,6 +8,7 @@ import inspect
 import json
 import random
 import time
+import functools
 from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
@@ -108,8 +109,6 @@ class ChunkedGraphCache:
         self.chunks_dir.mkdir(parents=True, exist_ok=True)
 
         self.key_to_ref: dict[str, tuple[str, int]] = {}
-        self._current_chunk_file: str | None = None
-        self._current_chunk_graphs: list[Any] | None = None
 
         if self.manifest_path.exists():
             raw = json.loads(self.manifest_path.read_text(encoding="utf-8"))
@@ -174,13 +173,14 @@ class ChunkedGraphCache:
             raise KeyError("Structure missing from chunk cache")
         return self.key_to_ref[k]
 
+    @functools.lru_cache(maxsize=30)
+    def _get_chunk(self, chunk_file: str):
+        payload = torch.load(self.chunks_dir / chunk_file, map_location="cpu", weights_only=False)
+        return payload["graphs"]
+
     def load_graph(self, ref: tuple[str, int]):
         chunk_file, offset = ref
-        if self._current_chunk_file != chunk_file or self._current_chunk_graphs is None:
-            payload = torch.load(self.chunks_dir / chunk_file, map_location="cpu", weights_only=False)
-            self._current_chunk_file = chunk_file
-            self._current_chunk_graphs = payload["graphs"]
-        return self._current_chunk_graphs[offset]
+        return self._get_chunk(chunk_file)[offset]
 
 
 def move_graph_batch_to_device(obj, device):
