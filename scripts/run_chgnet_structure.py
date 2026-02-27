@@ -329,7 +329,9 @@ def train_one_fold(
     history_csv.parent.mkdir(parents=True, exist_ok=True)
     no_improve_epochs = 0
 
+    fold_start = time.perf_counter()
     for ep in range(1, cfg.epochs + 1):
+        ep_start = time.perf_counter()
         model.train()
         losses = []
         for bg, y in train_loader:
@@ -350,7 +352,16 @@ def train_one_fold(
         val_loss = float(np.mean(np.abs(val_pred - val_true)))
 
         rows.append({"epoch": ep, "train_loss": train_loss, "val_loss": val_loss, "val_mae": val_mae})
-        print(f"Epoch {ep}/{cfg.epochs} train_loss={train_loss:.6f} val_mae={val_mae:.6f}")
+
+        ep_time = time.perf_counter() - ep_start
+        elapsed = time.perf_counter() - fold_start
+        avg_ep = elapsed / ep
+        eta_sec = max(0.0, (cfg.epochs - ep) * avg_ep)
+        eta_min = eta_sec / 60.0
+        print(
+            f"Epoch {ep}/{cfg.epochs} - Loss: {train_loss:.6f} - Val MAE: {val_mae:.6f} "
+            f"- Time: {ep_time:.1f}s - ETA: {eta_min:.1f} mins remaining for this fold"
+        )
 
         if val_mae < best_mae:
             best_mae = val_mae
@@ -391,15 +402,34 @@ def main():
         raise RuntimeError("CHGNet is not installed. Please install it first (`pip install chgnet`).")
 
     t0 = time.perf_counter()
-    cfg_raw = yaml.safe_load(Path(args.config).read_text())
+    cfg_path = Path(args.config)
+    cfg_raw = yaml.safe_load(cfg_path.read_text())
 
     seed = int(cfg_raw.get("seed", 42))
     set_seed(seed)
 
     task_name = cfg_raw["task"]["name"]
+
+    # Strict config validation: prevent silent heavy default runs.
+    has_training = "training" in cfg_raw
+    has_extras = "training_extras" in cfg_raw
+    has_params = "params" in cfg_raw
+    is_baseline_cfg = cfg_path.name in {"chgnet_mp_e_form.yaml", "run_chgnet_structure.yaml"}
+    if not (has_training or has_params) and not is_baseline_cfg:
+        raise ValueError(
+            "Experiment config missing params/training keys. "
+            "Aborting to prevent silent heavy default run."
+        )
+
     params_dict = cfg_raw.get("params", {})
     train_dict = cfg_raw.get("training", params_dict)
     extras = cfg_raw.get("training_extras", params_dict)
+
+    has_data_fraction = "data_fraction" in extras or "data_fraction" in train_dict
+    has_train_fraction = "train_fraction" in extras or "train_fraction" in train_dict
+    has_val_fraction = "val_fraction" in extras or "val_fraction" in train_dict
+    if not (has_data_fraction or has_train_fraction or has_val_fraction):
+        print("\n\033[93m[WARN] data_fraction/train_fraction/val_fraction not set in config; defaulting to 1.0\033[0m")
 
     cfg = TrainConfig(
         epochs=int(train_dict.get("epochs", 20)),
@@ -408,9 +438,9 @@ def main():
         weight_decay=float(train_dict.get("weight_decay", 1e-5)),
         freeze_backbone=bool(extras.get("freeze_backbone", False)),
         mode=str(extras.get("mode", "finetune")),
-        train_fraction=float(extras.get("train_fraction", extras.get("data_fraction", 1.0))),
-        val_fraction=float(extras.get("val_fraction", extras.get("data_fraction", 1.0))),
-        early_stopping_patience=int(extras.get("early_stopping_patience", 5)),
+        train_fraction=float(extras.get("train_fraction", train_dict.get("train_fraction", extras.get("data_fraction", train_dict.get("data_fraction", 1.0))))),
+        val_fraction=float(extras.get("val_fraction", train_dict.get("val_fraction", extras.get("data_fraction", train_dict.get("data_fraction", 1.0))))),
+        early_stopping_patience=int(extras.get("early_stopping_patience", train_dict.get("early_stopping_patience", 5))),
     )
 
     device_cfg = cfg_raw.get("runtime", {}).get("device", "auto")
