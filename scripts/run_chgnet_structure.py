@@ -443,6 +443,14 @@ def main():
         early_stopping_patience=int(extras.get("early_stopping_patience", train_dict.get("early_stopping_patience", 5))),
     )
 
+    print(
+        "EFFECTIVE_CONFIG "
+        f"task={task_name} epochs={cfg.epochs} batch_size={cfg.batch_size} "
+        f"lr={cfg.lr} wd={cfg.weight_decay} freeze_backbone={cfg.freeze_backbone} "
+        f"mode={cfg.mode} train_fraction={cfg.train_fraction} val_fraction={cfg.val_fraction} "
+        f"early_stopping_patience={cfg.early_stopping_patience}"
+    )
+
     device_cfg = cfg_raw.get("runtime", {}).get("device", "auto")
     device = torch.device("cuda" if torch.cuda.is_available() and device_cfg == "auto" else "cpu")
     print(f"Using device: {device}")
@@ -471,9 +479,12 @@ def main():
     drive_root = Path("/content/drive/MyDrive")
     if drive_root.exists():
         cache_root = drive_root / "MALTbot-cache" / "chgnet_graph_cache"
+        print(f"[cache] Using Google Drive cache root: {cache_root}")
     else:
         cache_root = Path("data/chgnet_graph_cache")
+        print(f"[cache] Using local cache root: {cache_root}")
     graph_cache = ChunkedGraphCache(cache_root / task_name, chunk_size=chunk_size)
+    print(f"[cache] chunk_size={chunk_size}")
 
     converter_model = CHGNet.load()
     converter = converter_model.graph_converter
