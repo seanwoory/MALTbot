@@ -267,6 +267,32 @@ def main() -> None:
     params = exp.get("params") or {}
     tr = base_cfg.setdefault("training", {})
     extras = base_cfg.setdefault("training_extras", {})
+
+    # Notebook-level agile override (two-tier fractions) for selected CHGNet experiments.
+    run_mode = os.getenv("MALTBOT_RUN_MODE", "").strip().upper()
+    target_exps = {"chgnet_head_finetune_freeze", "chgnet_full_finetune"}
+    if exp_name in target_exps and run_mode in {"SMOKE", "FULL"}:
+        if run_mode == "SMOKE":
+            frac = float(os.getenv("MALTBOT_SMOKE_FRACTION", "0.0001"))
+            epochs = int(os.getenv("MALTBOT_SMOKE_EPOCHS", "1"))
+            patience = int(os.getenv("MALTBOT_SMOKE_PATIENCE", "1"))
+        else:
+            frac = float(os.getenv("MALTBOT_FULL_FRACTION", "0.1"))
+            epochs = int(os.getenv("MALTBOT_FULL_EPOCHS", str(tr.get("epochs", 20))))
+            patience = int(os.getenv("MALTBOT_FULL_PATIENCE", "3"))
+
+        params = dict(params)
+        params["data_fraction"] = frac
+        params["cache_fraction"] = frac
+        params["epochs"] = epochs
+        params["early_stopping_patience"] = patience
+
+        folds_env = os.getenv("MALTBOT_FOLDS", "").strip()
+        if folds_env:
+            folds = [f.strip() for f in folds_env.split(",") if f.strip()]
+            params["folds"] = folds
+        else:
+            params.setdefault("folds", ["fold_0"])
     if "lr" in params:
         tr["lr"] = float(params["lr"])
     if "epochs" in params:
