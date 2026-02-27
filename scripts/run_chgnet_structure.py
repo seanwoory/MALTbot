@@ -130,12 +130,15 @@ class ChunkedGraphCache:
         last = files[-1].stem.split("_")[-1]
         return int(last) + 1
 
-    def build_missing(self, structures: list[Structure], converter) -> tuple[int, int]:
-        """Convert only missing structures and append to chunk files."""
+    def build_missing(self, structures: list[Structure], converter) -> tuple[int, int, int]:
+        """Convert only missing structures and append to chunk files.
+        Returns: (new_count, adaptive_count, failed_count)
+        """
         buffer_graphs: list[Any] = []
         buffer_keys: list[str] = []
         new_count = 0
         adaptive_count = 0
+        failed_count = 0
         chunk_idx = self._next_chunk_index()
 
         def flush_buffer():
@@ -155,7 +158,13 @@ class ChunkedGraphCache:
             k = structure_hash(s)
             if k in self.key_to_ref:
                 continue
-            g, used = convert_structure_with_adaptive_cutoff(s, converter, i)
+            try:
+                g, used = convert_structure_with_adaptive_cutoff(s, converter, i)
+            except Exception as e:
+                failed_count += 1
+                print(f"[WARN] graph conversion failed idx={i}, key={k[:12]}...: {e} (skip)")
+                continue
+
             buffer_graphs.append(g)
             buffer_keys.append(k)
             new_count += 1
@@ -167,7 +176,10 @@ class ChunkedGraphCache:
         flush_buffer()
         if new_count > 0:
             self._save_manifest()
-        return new_count, adaptive_count
+        return new_count, adaptive_count, failed_count
+
+    def has_structure(self, s: Structure) -> bool:
+        return structure_hash(s) in self.key_to_ref
 
     def ref_for_structure(self, s: Structure) -> tuple[str, int]:
         k = structure_hash(s)
@@ -595,8 +607,11 @@ def main():
         all_structs.extend(te_x)
 
     print(f"Building/updating chunked graph cache (chunk_size={chunk_size}) ...")
-    new_count, adaptive_count = graph_cache.build_missing(all_structs, converter)
-    print(f"Chunked graph cache ready: {graph_cache.cache_dir} (new={new_count}, adaptive={adaptive_count})")
+    new_count, adaptive_count, failed_count = graph_cache.build_missing(all_structs, converter)
+    print(
+        f"Chunked graph cache ready: {graph_cache.cache_dir} "
+        f"(new={new_count}, adaptive={adaptive_count}, failed={failed_count})"
+    )
 
     out_dir = resolve_out_dir(cfg_raw)
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -606,8 +621,32 @@ def main():
         print(f"\n--- Starting Fold: {fold} ---")
         payload = fold_payload[fold]
 
-        train_refs = [graph_cache.ref_for_structure(s) for s in payload["train_x"]]
-        test_refs = [graph_cache.ref_for_structure(s) for s in payload["test_x"]]
+        # Skip any structures that failed conversion during cache build.
+        train_pairs = [(s, y) for s, y in zip(payload["train_x"], payload["train_y"]) if graph_cache.has_structure(s)]
+        skipped_train = len(payload["train_x"]) - len(train_pairs)
+        if skipped_train > 0:
+            print(f"[WARN] fold={fold} skipped train structures missing in cache: {skipped_train}")
+
+        test_pairs = [
+            (s, y, sid)
+            for s, y, sid in zip(payload["test_x"], payload["test_y"], payload["test_ids"])
+            if graph_cache.has_structure(s)
+        ]
+        skipped_test = len(payload["test_x"]) - len(test_pairs)
+        if skipped_test > 0:
+            print(f"[WARN] fold={fold} skipped test structures missing in cache: {skipped_test}")
+
+        if len(train_pairs) == 0 or len(test_pairs) == 0:
+            raise RuntimeError(
+                f"fold={fold} has no usable data after cache filtering "
+                f"(train={len(train_pairs)}, test={len(test_pairs)})."
+            )
+
+        train_refs = [graph_cache.ref_for_structure(s) for s, _ in train_pairs]
+        train_targets = [y for _, y in train_pairs]
+        test_refs = [graph_cache.ref_for_structure(s) for s, _, _ in test_pairs]
+        test_targets = [y for _, y, _ in test_pairs]
+        test_ids = [sid for _, _, sid in test_pairs]
 
         model = CHGNet.load()
         model.to(device)
@@ -619,7 +658,7 @@ def main():
         train_one_fold(
             model,
             train_refs,
-            payload["train_y"],
+            train_targets,
             graph_cache,
             cfg,
             device,
@@ -630,20 +669,28 @@ def main():
         preds = run_predict_on_refs(model, test_refs, graph_cache, device, cfg.batch_size)
         task.record(fold, preds)
 
-        y_true = np.array(payload["test_y"], dtype=float)
+        y_true = np.array(test_targets, dtype=float)
         mask = np.isfinite(preds)
+        nan_count = int((~mask).sum())
+        nan_ratio = nan_count / max(1, len(preds))
+        if nan_ratio > 0.05:
+            raise RuntimeError(
+                f"Too many invalid predictions on fold {fold}: "
+                f"{nan_count}/{len(preds)} ({nan_ratio:.2%}) > 5%"
+            )
+
         if np.any(mask):
             mae = float(np.mean(np.abs(preds[mask] - y_true[mask])))
         else:
             mae = float("inf")
         fold_mae[fold] = mae
-        print(f"Fold {fold} MAE: {mae:.6f}")
+        print(f"Fold {fold} MAE: {mae:.6f} (nan_ratio={nan_ratio:.2%})")
 
         preds_csv = out_dir / f"preds_fold_{fold_tag}.csv"
         with preds_csv.open("w", newline="", encoding="utf-8") as f:
             w = csv.writer(f)
             w.writerow(["id", "y_true", "y_pred"])
-            for sid, yt, yp in zip(payload["test_ids"], y_true.tolist(), preds.tolist()):
+            for sid, yt, yp in zip(test_ids, y_true.tolist(), preds.tolist()):
                 w.writerow([sid, yt, yp])
 
     mean_mae = float(np.mean(list(fold_mae.values()))) if fold_mae else None
