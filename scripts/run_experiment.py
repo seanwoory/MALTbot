@@ -276,14 +276,18 @@ def main() -> None:
             frac = float(os.getenv("MALTBOT_SMOKE_FRACTION", "0.0001"))
             epochs = int(os.getenv("MALTBOT_SMOKE_EPOCHS", "1"))
             patience = int(os.getenv("MALTBOT_SMOKE_PATIENCE", "1"))
+            default_cache_frac = "0.001"
         else:
             frac = float(os.getenv("MALTBOT_FULL_FRACTION", "0.1"))
             epochs = int(os.getenv("MALTBOT_FULL_EPOCHS", str(tr.get("epochs", 20))))
             patience = int(os.getenv("MALTBOT_FULL_PATIENCE", "3"))
+            default_cache_frac = "0.001"
+
+        cache_frac = float(os.getenv("MALTBOT_CACHE_FRACTION", default_cache_frac))
 
         params = dict(params)
         params["data_fraction"] = frac
-        params["cache_fraction"] = frac
+        params["cache_fraction"] = cache_frac
         params["epochs"] = epochs
         params["early_stopping_patience"] = patience
 

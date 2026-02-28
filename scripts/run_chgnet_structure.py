@@ -569,6 +569,19 @@ def main():
     if cache_fraction < 1.0:
         print(f"[cache] agile cache_fraction={cache_fraction:.3f}: building subset cache only")
 
+    run_name = str(cfg_raw.get("run_name", ""))
+    if "chgnet_head_finetune_freeze" in run_name and not cfg.freeze_backbone:
+        raise ValueError("Config mismatch: head_finetune_freeze requires freeze_backbone=True")
+
+    print(
+        "EFFECTIVE_CONFIG_EXT "
+        f"folds={folds_to_run} cache_fraction={cache_fraction} cache_root={cache_root} "
+        f"freeze_backbone={cfg.freeze_backbone}"
+    )
+
+    if str(cache_root).startswith("/content/drive"):
+        print("[WARN] cache_root is on Drive; if epochs are slow, lower cache thrash with larger LRU/chunk-aware settings.")
+
     for fold in folds_to_run:
         tr_x, tr_y = task.get_train_and_val_data(fold)
         te_x = task.get_test_data(fold, include_target=False)
