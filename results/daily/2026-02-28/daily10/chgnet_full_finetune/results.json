@@ -1,0 +1,45 @@
+{
+  "experiment": "chgnet_full_finetune",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "success",
+  "metric": 5.263871209638092,
+  "metric_name": "MAE",
+  "metric_value": 5.263871209638092,
+  "metric_unit": "eV/atom",
+  "fold_scores": {
+    "0": 5.263871209638092
+  },
+  "mean": 5.263871209638092,
+  "std": 0.0,
+  "train_wall_time_sec": 188.61,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_full_finetune",
+  "note": "Full CHGNet structure finetuning (ultra-fast agile)",
+  "exp_config_path": "configs/experiments/chgnet_full_finetune.yaml",
+  "exp_params": {
+    "epochs": 2,
+    "lr": "1e-4",
+    "freeze_backbone": false,
+    "data_fraction": 0.001,
+    "cache_fraction": 0.001,
+    "early_stopping_patience": 3
+  },
+  "output_path": "results/daily/2026-02-28/daily10/chgnet_full_finetune/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "92ae5e7498a74bf29fd2369582b5fba74093d0dd",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA L4"
+  },
+  "run": {
+    "returncode": 0,
+    "stdout_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=1 batch_size=64 lr=0.0001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.0001 val_fraction=0.0001 early_stopping_patience=1\nUsing device: cuda\n2026-02-28 01:07:10 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-28 01:07:10 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-28 01:10:05 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.000: building subset cache only\nBuilding/updating chunked graph cache (chunk_size=1000) ...\nChunked graph cache ready: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache/matbench_mp_e_form (new=0, adaptive=0, failed=0)\n\n--- Starting Fold: 0 ---\nEFFECTIVE_FOLD_DATA fold=0 n_train=10 n_test=2\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\nEFFECTIVE_SPLIT n_train=1/9 n_val=1/1\n/usr/local/lib/python3.12/dist-packages/chgnet/model/model.py:898: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)\n  volumes = torch.tensor(volumes, dtype=TORCH_DTYPE, device=atomic_numbers.device)\nEpoch 1/1 - Loss: 3.450046 - Val MAE: 7.374933 - Time: 1.6s - ETA: 0.0 mins remaining for this fold\n[WARN] skip task.record for fold=0: cache_fraction<1.0\nFold 0 MAE: 5.263871 (nan_ratio=0.00%)\n\nFinal mean MAE: 5.263871209638092\nWrote results to results/daily/2026-02-28/daily10/chgnet_full_finetune/results.json\nFINAL_METRIC_MAE=5.263871",
+    "stderr_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=1 batch_size=64 lr=0.0001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.0001 val_fraction=0.0001 early_stopping_patience=1\nUsing device: cuda\n2026-02-28 01:07:10 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-28 01:07:10 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-28 01:10:05 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.000: building subset cache only\nBuilding/updating chunked graph cache (chunk_size=1000) ...\nChunked graph cache ready: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache/matbench_mp_e_form (new=0, adaptive=0, failed=0)\n\n--- Starting Fold: 0 ---\nEFFECTIVE_FOLD_DATA fold=0 n_train=10 n_test=2\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\nEFFECTIVE_SPLIT n_train=1/9 n_val=1/1\n/usr/local/lib/python3.12/dist-packages/chgnet/model/model.py:898: UserWarning: Converting a tensor with requires_grad=True to a scalar may lead to unexpected behavior.\nConsider using tensor.detach() first. (Triggered internally at /pytorch/torch/csrc/autograd/generated/python_variable_methods.cpp:836.)\n  volumes = torch.tensor(volumes, dtype=TORCH_DTYPE, device=atomic_numbers.device)\nEpoch 1/1 - Loss: 3.450046 - Val MAE: 7.374933 - Time: 1.6s - ETA: 0.0 mins remaining for this fold\n[WARN] skip task.record for fold=0: cache_fraction<1.0\nFold 0 MAE: 5.263871 (nan_ratio=0.00%)\n\nFinal mean MAE: 5.263871209638092\nWrote results to results/daily/2026-02-28/daily10/chgnet_full_finetune/results.json\nFINAL_METRIC_MAE=5.263871"
+  },
+  "source_output_path": "results/daily/2026-02-28/daily10/chgnet_full_finetune/results.json"
+}
