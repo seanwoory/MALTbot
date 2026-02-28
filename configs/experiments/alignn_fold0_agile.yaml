@@ -1,0 +1,21 @@
+name: alignn_fold0_agile
+enabled: true
+task:
+  name: matbench_mp_e_form
+  folds: ['fold_0']
+runner: alignn
+seed: 42
+model_config: alignn_fold0_agile
+note: ALIGNN-like fold0 agile baseline
+params:
+  epochs: 1
+  batch_size: 8
+  lr: 0.001
+  weight_decay: 1e-5
+  hidden_dim: 128
+  num_layers: 3
+  cutoff: 8.0
+  max_neighbors: 12
+  data_fraction: 0.0001
+  cache_fraction: 0.001
+  early_stopping_patience: 1
