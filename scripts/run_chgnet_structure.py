@@ -580,6 +580,7 @@ def main():
         te_x = list(te_x)
         te_y = [float(v) for v in te_y]
         ids = [str(x) for x in ids]
+        full_test_len = len(te_y)
 
         if cache_fraction < 1.0:
             tr_keep = max(1, int(len(tr_x) * cache_fraction)) if len(tr_x) > 0 else 0
@@ -602,6 +603,7 @@ def main():
             "test_x": te_x,
             "test_y": te_y,
             "test_ids": ids,
+            "full_test_len": full_test_len,
         }
         all_structs.extend(tr_x)
         all_structs.extend(te_x)
@@ -617,6 +619,8 @@ def main():
     out_dir.mkdir(parents=True, exist_ok=True)
 
     fold_mae = {}
+    fold_record_meta = {}
+    any_recorded = False
     for fold in folds_to_run:
         print(f"\n--- Starting Fold: {fold} ---")
         payload = fold_payload[fold]
@@ -667,7 +671,40 @@ def main():
         )
 
         preds = run_predict_on_refs(model, test_refs, graph_cache, device, cfg.batch_size)
-        task.record(fold, preds)
+
+        full_test_len = int(payload.get("full_test_len", len(test_targets)))
+        effective_test_len = len(test_targets)
+        skip_reason = None
+        should_record = True
+        if cache_fraction < 1.0:
+            should_record = False
+            skip_reason = f"cache_fraction<{1.0}"
+        elif skipped_test > 0:
+            should_record = False
+            skip_reason = f"skipped_test={skipped_test}"
+        elif len(preds) != full_test_len:
+            should_record = False
+            skip_reason = f"len(preds)!={full_test_len}"
+
+        if should_record:
+            task.record(fold, preds)
+            any_recorded = True
+            fold_record_meta[str(fold)] = {
+                "matbench_recorded": True,
+                "record_skip_reason": None,
+                "full_test_len": full_test_len,
+                "effective_test_len": effective_test_len,
+                "skipped_test": skipped_test,
+            }
+        else:
+            print(f"[WARN] skip task.record for fold={fold}: {skip_reason}")
+            fold_record_meta[str(fold)] = {
+                "matbench_recorded": False,
+                "record_skip_reason": skip_reason,
+                "full_test_len": full_test_len,
+                "effective_test_len": effective_test_len,
+                "skipped_test": skipped_test,
+            }
 
         y_true = np.array(test_targets, dtype=float)
         mask = np.isfinite(preds)
@@ -695,8 +732,14 @@ def main():
 
     mean_mae = float(np.mean(list(fold_mae.values()))) if fold_mae else None
 
+    task_scores = None
+    try:
+        task_scores = task.scores if any_recorded else None
+    except Exception:
+        task_scores = None
+
     result = {
-        "task": {"name": task_name, "scores": task.scores},
+        "task": {"name": task_name, "scores": task_scores},
         "metrics": {
             "metric_name": "MAE",
             "metric_value": mean_mae,
@@ -717,6 +760,12 @@ def main():
             "chunk_size": chunk_size,
             "num_cached_structures": len(graph_cache.key_to_ref),
         },
+        "matbench_recorded": bool(any_recorded and all(v.get("matbench_recorded") for v in fold_record_meta.values())),
+        "record_skip_reason": None if all(v.get("matbench_recorded") for v in fold_record_meta.values()) else "partial_or_subsample_run",
+        "full_test_len": int(sum(v.get("full_test_len", 0) for v in fold_record_meta.values())),
+        "effective_test_len": int(sum(v.get("effective_test_len", 0) for v in fold_record_meta.values())),
+        "skipped_test": int(sum(v.get("skipped_test", 0) for v in fold_record_meta.values())),
+        "fold_record_meta": fold_record_meta,
     }
 
     out_file = out_dir / "results.json"
