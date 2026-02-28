@@ -1,0 +1,43 @@
+{
+  "experiment": "alignn_fold0_agile",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "skipped",
+  "metric": "SKIPPED",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": null,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "alignn_fold0_agile",
+  "note": "ALIGNN-like fold0 agile baseline",
+  "exp_config_path": "configs/experiments/alignn_fold0_agile.yaml",
+  "exp_params": {
+    "epochs": 1,
+    "batch_size": 8,
+    "lr": 0.001,
+    "weight_decay": "1e-5",
+    "hidden_dim": 128,
+    "num_layers": 3,
+    "cutoff": 8.0,
+    "max_neighbors": 12,
+    "data_fraction": 0.0001,
+    "cache_fraction": 0.001,
+    "early_stopping_patience": 1
+  },
+  "output_path": "results/daily/2026-02-28/daily11_alignn/alignn_fold0_agile/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "934450d5a189831cdaea71fa7478d581b74df8ca",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA L4"
+  },
+  "error_message": "Runner 'alignn' not implemented yet."
+}
