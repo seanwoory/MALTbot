@@ -243,6 +243,7 @@ def main() -> None:
         "mlp_pretrained_infer_fallback",
         "mlp_head_finetune_freeze",
         "chgnet_structure",
+        "alignn",
         # Reserved names for future true CHGNet implementations:
         "chgnet_pretrained_infer",
         "chgnet_head_finetune_freeze",
@@ -270,7 +271,7 @@ def main() -> None:
 
     # Notebook-level agile override (two-tier fractions) for selected CHGNet experiments.
     run_mode = os.getenv("MALTBOT_RUN_MODE", "").strip().upper()
-    target_exps = {"chgnet_head_finetune_freeze", "chgnet_full_finetune"}
+    target_exps = {"chgnet_head_finetune_freeze", "chgnet_full_finetune", "alignn_fold0_agile"}
     if exp_name in target_exps and run_mode in {"SMOKE", "FULL"}:
         if run_mode == "SMOKE":
             frac = float(os.getenv("MALTBOT_SMOKE_FRACTION", "0.0001"))
@@ -366,8 +367,11 @@ def main() -> None:
             payload["status"] = "partial"
 
     target_script = "scripts/run_chgnet_mp_e_form.py"
-    if runner in {"chgnet_structure", "chgnet_pretrained_infer", "chgnet_head_finetune_freeze", "chgnet_ensemble3"}:
-        target_script = "scripts/run_chgnet_structure.py"
+    if runner in {"chgnet_structure", "chgnet_pretrained_infer", "chgnet_head_finetune_freeze", "chgnet_ensemble3", "alignn"}:
+        if runner == "alignn":
+            target_script = "scripts/run_alignn_mp_e_form.py"
+        else:
+            target_script = "scripts/run_chgnet_structure.py"
 
     if runner == "chgnet_pretrained_infer":
         tr["epochs"] = 0
