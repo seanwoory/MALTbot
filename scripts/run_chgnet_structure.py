@@ -523,6 +523,11 @@ def main():
         early_stopping_patience=int(extras.get("early_stopping_patience", train_dict.get("early_stopping_patience", 5))),
     )
 
+    run_name = str(cfg_raw.get("run_name", ""))
+    if "chgnet_head_finetune_freeze" in run_name and not cfg.freeze_backbone:
+        print("[WARN] forcing freeze_backbone=True for chgnet_head_finetune_freeze")
+        cfg.freeze_backbone = True
+
     print(
         "EFFECTIVE_CONFIG "
         f"task={task_name} epochs={cfg.epochs} batch_size={cfg.batch_size} "
@@ -576,10 +581,6 @@ def main():
     cache_fraction = min(max(cache_fraction, 0.0), 1.0)
     if cache_fraction < 1.0:
         print(f"[cache] agile cache_fraction={cache_fraction:.3f}: building subset cache only")
-
-    run_name = str(cfg_raw.get("run_name", ""))
-    if "chgnet_head_finetune_freeze" in run_name and not cfg.freeze_backbone:
-        raise ValueError("Config mismatch: head_finetune_freeze requires freeze_backbone=True")
 
     print(
         "EFFECTIVE_CONFIG_EXT "
