@@ -1,0 +1,42 @@
+{
+  "experiment": "chgnet_pretrained_infer",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 248.655,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_pretrained_infer",
+  "note": "Zero-shot pretrained CHGNet inference (ultra-fast agile)",
+  "exp_config_path": "configs/experiments/chgnet_pretrained_infer.yaml",
+  "exp_params": {
+    "epochs": 0,
+    "mode": "pretrained",
+    "data_fraction": 0.001,
+    "cache_fraction": 0.001
+  },
+  "output_path": "results/daily/2026-02-28/daily10/chgnet_pretrained_infer/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "b0d747468290de947ad5a5561d4a0145386286b4",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA L4"
+  },
+  "run": {
+    "returncode": 1,
+    "stdout_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=0 batch_size=64 lr=0.001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.001 val_fraction=0.001 early_stopping_patience=5\nUsing device: cuda\n2026-02-27 23:59:15 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-27 23:59:15 INFO     Loading dataset 'matbench_mp_e_form'...\nFetching matbench_mp_e_form.json.gz from https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz to /usr/local/lib/python3.12/dist-packages/matminer/datasets/matbench_mp_e_form.json.gz\n\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  46%|####6     | 76.79385599999999/166.734239 [00:00<00:00, 767.93MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  94%|#########4| 157.25567999999998/166.734239 [00:00<00:00, 789.51MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 761.47MB/s]                                        \n2026-02-28 00:02:12 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.001: building subset cache only\nBuilding/updating chunked graph cache (chunk_size=1000) ...\nChunked graph cache ready: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache/matbench_mp_e_form (new=0, adaptive=0, failed=0)\n\n--- Starting Fold: 0 ---\nEFFECTIVE_FOLD_DATA fold=0 n_train=106 n_test=26\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 744, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 680, in main\n    task.record(fold, preds)\n  File \"/usr/local/lib/python3.12/dist-packages/matbench/task.py\", line 344, in record\n    raise ValueError(\nValueError: Prediction outputs must be the same length as the inputs! 26 != 26551",
+    "stderr_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=0 batch_size=64 lr=0.001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.001 val_fraction=0.001 early_stopping_patience=5\nUsing device: cuda\n2026-02-27 23:59:15 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-27 23:59:15 INFO     Loading dataset 'matbench_mp_e_form'...\nFetching matbench_mp_e_form.json.gz from https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz to /usr/local/lib/python3.12/dist-packages/matminer/datasets/matbench_mp_e_form.json.gz\n\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  46%|####6     | 76.79385599999999/166.734239 [00:00<00:00, 767.93MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  94%|#########4| 157.25567999999998/166.734239 [00:00<00:00, 789.51MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 761.47MB/s]                                        \n2026-02-28 00:02:12 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.001: building subset cache only\nBuilding/updating chunked graph cache (chunk_size=1000) ...\nChunked graph cache ready: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache/matbench_mp_e_form (new=0, adaptive=0, failed=0)\n\n--- Starting Fold: 0 ---\nEFFECTIVE_FOLD_DATA fold=0 n_train=106 n_test=26\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 744, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 680, in main\n    task.record(fold, preds)\n  File \"/usr/local/lib/python3.12/dist-packages/matbench/task.py\", line 344, in record\n    raise ValueError(\nValueError: Prediction outputs must be the same length as the inputs! 26 != 26551"
+  },
+  "error_message": "runner exited with code 1",
+  "traceback_or_stderr_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=0 batch_size=64 lr=0.001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.001 val_fraction=0.001 early_stopping_patience=5\nUsing device: cuda\n2026-02-27 23:59:15 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-27 23:59:15 INFO     Loading dataset 'matbench_mp_e_form'...\nFetching matbench_mp_e_form.json.gz from https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz to /usr/local/lib/python3.12/dist-packages/matminer/datasets/matbench_mp_e_form.json.gz\n\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:   0%|          | 0.0/166.734239 [00:00<?, ?MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  46%|####6     | 76.79385599999999/166.734239 [00:00<00:00, 767.93MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB:  94%|#########4| 157.25567999999998/166.734239 [00:00<00:00, 789.51MB/s]\nFetching https://ml.materialsproject.org/projects/matbench_mp_e_form.json.gz in MB: 166.735872MB [00:00, 761.47MB/s]                                        \n2026-02-28 00:02:12 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.001: building subset cache only\nBuilding/updating chunked graph cache (chunk_size=1000) ...\nChunked graph cache ready: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache/matbench_mp_e_form (new=0, adaptive=0, failed=0)\n\n--- Starting Fold: 0 ---\nEFFECTIVE_FOLD_DATA fold=0 n_train=106 n_test=26\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 744, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 680, in main\n    task.record(fold, preds)\n  File \"/usr/local/lib/python3.12/dist-packages/matbench/task.py\", line 344, in record\n    raise ValueError(\nValueError: Prediction outputs must be the same length as the inputs! 26 != 26551"
+}
