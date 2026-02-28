@@ -1,0 +1,44 @@
+{
+  "experiment": "chgnet_head_finetune_freeze",
+  "task": {
+    "name": "matbench_mp_e_form"
+  },
+  "status": "error",
+  "metric": "ERROR",
+  "metric_name": "MAE",
+  "metric_value": null,
+  "metric_unit": "eV/atom",
+  "fold_scores": null,
+  "mean": null,
+  "std": null,
+  "train_wall_time_sec": 186.232,
+  "dataset_size": null,
+  "num_params": null,
+  "seed": 42,
+  "model_config": "chgnet_head_finetune_freeze",
+  "note": "CHGNet frozen backbone finetuning (ultra-fast smoke)",
+  "exp_config_path": "configs/experiments/chgnet_head_finetune_freeze.yaml",
+  "exp_params": {
+    "epochs": 1,
+    "lr": "1e-3",
+    "freeze_backbone": true,
+    "data_fraction": 0.001,
+    "cache_fraction": 0.001,
+    "early_stopping_patience": 3
+  },
+  "output_path": "results/daily/2026-02-28/daily10/chgnet_head_finetune_freeze/results.json",
+  "env": {
+    "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
+    "git_commit": "fd3eed96b331bf5ad7ee35c6d434124175262f47",
+    "torch": "2.10.0+cu128",
+    "cuda_available": true,
+    "gpu_type": "NVIDIA L4"
+  },
+  "run": {
+    "returncode": 1,
+    "stdout_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=3 batch_size=64 lr=0.001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.1 val_fraction=0.1 early_stopping_patience=3\nUsing device: cuda\n2026-02-28 04:19:29 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-28 04:19:29 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-28 04:22:23 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.001: building subset cache only\nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 806, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 582, in main\n    raise ValueError(\"Config mismatch: head_finetune_freeze requires freeze_backbone=True\")\nValueError: Config mismatch: head_finetune_freeze requires freeze_backbone=True",
+    "stderr_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=3 batch_size=64 lr=0.001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.1 val_fraction=0.1 early_stopping_patience=3\nUsing device: cuda\n2026-02-28 04:19:29 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-28 04:19:29 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-28 04:22:23 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.001: building subset cache only\nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 806, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 582, in main\n    raise ValueError(\"Config mismatch: head_finetune_freeze requires freeze_backbone=True\")\nValueError: Config mismatch: head_finetune_freeze requires freeze_backbone=True"
+  },
+  "error_message": "runner exited with code 1",
+  "traceback_or_stderr_tail": "EFFECTIVE_CONFIG task=matbench_mp_e_form epochs=3 batch_size=64 lr=0.001 wd=0.0001 freeze_backbone=False mode=finetune train_fraction=0.1 val_fraction=0.1 early_stopping_patience=3\nUsing device: cuda\n2026-02-28 04:19:29 INFO     Initialized benchmark 'matbench_v0.1' with 1 tasks: \n['matbench_mp_e_form']\n2026-02-28 04:19:29 INFO     Loading dataset 'matbench_mp_e_form'...\n2026-02-28 04:22:23 INFO     Dataset 'matbench_mp_e_form loaded.\n[cache] Using Google Drive cache root: /content/drive/MyDrive/MALTbot-cache/chgnet_graph_cache\n[cache] chunk_size=1000 lru_chunks=30\nCHGNet v0.3.0 initialized with 412,525 parameters\nCHGNet will run on cuda\n[cache] agile cache_fraction=0.001: building subset cache only\nTraceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 806, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_chgnet_structure.py\", line 582, in main\n    raise ValueError(\"Config mismatch: head_finetune_freeze requires freeze_backbone=True\")\nValueError: Config mismatch: head_finetune_freeze requires freeze_backbone=True"
+}

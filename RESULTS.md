@@ -46,3 +46,6 @@
 - 2026-02-28: results/daily/2026-02-28/actions_smoke/results.json
 
 2026-02-28 | matbench_mp_e_form | chgnet_pretrained_infer | METRIC=ERROR | Zero-shot pretrained CHGNet inference (ultra-fast agile) | results/daily/2026-02-28/daily10/chgnet_pretrained_infer/results.json
+2026-02-28 | matbench_mp_e_form | chgnet_pretrained_infer | METRIC=4.918822 | Zero-shot pretrained CHGNet inference (ultra-fast agile) | results/daily/2026-02-28/daily10/chgnet_pretrained_infer/results.json
+2026-02-28 | matbench_mp_e_form | chgnet_head_finetune_freeze | METRIC=ERROR | CHGNet frozen backbone finetuning (ultra-fast smoke) | results/daily/2026-02-28/daily10/chgnet_head_finetune_freeze/results.json
+2026-02-28 | matbench_mp_e_form | chgnet_full_finetune | METRIC=4.910143 | Full CHGNet structure finetuning (ultra-fast agile) | results/daily/2026-02-28/daily10/chgnet_full_finetune/results.json
