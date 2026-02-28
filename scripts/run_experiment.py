@@ -276,11 +276,13 @@ def main() -> None:
             frac = float(os.getenv("MALTBOT_SMOKE_FRACTION", "0.0001"))
             epochs = int(os.getenv("MALTBOT_SMOKE_EPOCHS", "1"))
             patience = int(os.getenv("MALTBOT_SMOKE_PATIENCE", "1"))
+            bs = int(os.getenv("MALTBOT_SMOKE_BATCH_SIZE", "4"))
             default_cache_frac = "0.001"
         else:
             frac = float(os.getenv("MALTBOT_FULL_FRACTION", "0.1"))
             epochs = int(os.getenv("MALTBOT_FULL_EPOCHS", str(tr.get("epochs", 20))))
             patience = int(os.getenv("MALTBOT_FULL_PATIENCE", "3"))
+            bs = int(os.getenv("MALTBOT_FULL_BATCH_SIZE", "8"))
             default_cache_frac = "0.001"
 
         cache_frac = float(os.getenv("MALTBOT_CACHE_FRACTION", default_cache_frac))
@@ -289,6 +291,7 @@ def main() -> None:
         params["data_fraction"] = frac
         params["cache_fraction"] = cache_frac
         params["epochs"] = epochs
+        params["batch_size"] = bs
         params["early_stopping_patience"] = patience
 
         folds_env = os.getenv("MALTBOT_FOLDS", "").strip()
@@ -327,6 +330,10 @@ def main() -> None:
         extras["val_fraction"] = float(params["val_fraction"])
     if "early_stopping_patience" in params:
         extras["early_stopping_patience"] = int(params["early_stopping_patience"])
+    if "freeze_backbone" in params:
+        extras["freeze_backbone"] = bool(params["freeze_backbone"])
+    if "batch_size" in params:
+        tr["batch_size"] = int(params["batch_size"])
     if "folds" in params:
         f = params["folds"]
         if isinstance(f, str):
@@ -364,7 +371,7 @@ def main() -> None:
         tr["epochs"] = 0
         extras["mode"] = "pretrained"
 
-    if runner == "chgnet_head_finetune_freeze":
+    if runner == "chgnet_head_finetune_freeze" or exp_name == "chgnet_head_finetune_freeze":
         extras["freeze_backbone"] = True
         tr["epochs"] = int(params.get("epochs", 10))
         tr["lr"] = float(params.get("lr", 1e-3))
@@ -372,9 +379,6 @@ def main() -> None:
     if runner == "chgnet_ensemble3":
         extras["ensemble_seeds"] = params.get("seeds", [42, 43, 44])
         tr["epochs"] = int(params.get("epochs", 20))
-        # Map specific params for structure runner
-        if "freeze_backbone" in params:
-            extras["freeze_backbone"] = bool(params["freeze_backbone"])
 
     with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as tf:
         yaml.safe_dump(base_cfg, tf, sort_keys=False)
