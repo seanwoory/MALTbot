@@ -382,6 +382,10 @@ def main() -> None:
         extras["ensemble_seeds"] = params.get("seeds", [42, 43, 44])
         tr["epochs"] = int(params.get("epochs", 20))
 
+    # Keep payload params aligned with effective runtime overrides for debugging.
+    payload["exp_params"] = dict(params)
+    payload["effective_params"] = dict(params)
+
     with tempfile.NamedTemporaryFile("w", suffix=".yaml", delete=False) as tf:
         yaml.safe_dump(base_cfg, tf, sort_keys=False)
         temp_cfg = tf.name

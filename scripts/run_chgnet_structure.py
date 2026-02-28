@@ -577,15 +577,27 @@ def main():
 
     fold_payload = {}
     all_structs = []
-    cache_fraction = float(extras.get("cache_fraction", extras.get("data_fraction", 1.0)))
+    data_fraction = float(extras.get("data_fraction", 1.0))
+    data_fraction = min(max(data_fraction, 0.0), 1.0)
+
+    cache_fraction = float(extras.get("cache_fraction", data_fraction))
     cache_fraction = min(max(cache_fraction, 0.0), 1.0)
+
+    # Policy: cache coverage must not be smaller than selected data coverage.
+    if cache_fraction < data_fraction:
+        print(
+            f"[WARN] cache_fraction({cache_fraction:.4f}) < data_fraction({data_fraction:.4f}); "
+            f"auto-promoting cache_fraction to {data_fraction:.4f}"
+        )
+        cache_fraction = data_fraction
+
     if cache_fraction < 1.0:
         print(f"[cache] agile cache_fraction={cache_fraction:.3f}: building subset cache only")
 
     print(
         "EFFECTIVE_CONFIG_EXT "
-        f"folds={folds_to_run} cache_fraction={cache_fraction} cache_root={cache_root} "
-        f"freeze_backbone={cfg.freeze_backbone}"
+        f"folds={folds_to_run} data_fraction={data_fraction} cache_fraction={cache_fraction} "
+        f"cache_root={cache_root} freeze_backbone={cfg.freeze_backbone}"
     )
 
     if str(cache_root).startswith("/content/drive"):
@@ -604,9 +616,9 @@ def main():
         ids = [str(x) for x in ids]
         full_test_len = len(te_y)
 
-        if cache_fraction < 1.0:
-            tr_keep = max(1, int(len(tr_x) * cache_fraction)) if len(tr_x) > 0 else 0
-            te_keep = max(1, int(len(te_x) * cache_fraction)) if len(te_x) > 0 else 0
+        if data_fraction < 1.0:
+            tr_keep = max(1, int(len(tr_x) * data_fraction)) if len(tr_x) > 0 else 0
+            te_keep = max(1, int(len(te_x) * data_fraction)) if len(te_x) > 0 else 0
 
             if len(tr_x) > tr_keep:
                 pick = np.random.choice(len(tr_x), size=tr_keep, replace=False)
@@ -700,9 +712,9 @@ def main():
         effective_test_len = len(test_targets)
         skip_reason = None
         should_record = True
-        if cache_fraction < 1.0:
+        if data_fraction < 1.0:
             should_record = False
-            skip_reason = f"cache_fraction<{1.0}"
+            skip_reason = f"data_fraction<{1.0}"
         elif skipped_test > 0:
             should_record = False
             skip_reason = f"skipped_test={skipped_test}"
