@@ -55,3 +55,5 @@
 2026-02-28 | matbench_mp_e_form | chgnet_pretrained_infer | METRIC=4.918822 | Zero-shot pretrained CHGNet inference (ultra-fast agile) | results/daily/2026-02-28/daily10/chgnet_pretrained_infer/results.json
 2026-02-28 | matbench_mp_e_form | chgnet_head_finetune_freeze | METRIC=0.467452 | CHGNet frozen backbone finetuning (ultra-fast smoke) | results/daily/2026-02-28/daily10/chgnet_head_finetune_freeze/results.json
 2026-02-28 | matbench_mp_e_form | alignn_fold0_agile | METRIC=SKIPPED | ALIGNN-like fold0 agile baseline | results/daily/2026-02-28/daily11_alignn/alignn_fold0_agile/results.json- 2026-03-01: results/daily/2026-03-01/actions_smoke/results.json
+
+2026-03-01 | matbench_mp_e_form | alignn_fold0_agile | METRIC=ERROR | ALIGNN-like fold0 agile baseline | results/daily/2026-03-01/daily11_alignn/alignn_fold0_agile/results.json
