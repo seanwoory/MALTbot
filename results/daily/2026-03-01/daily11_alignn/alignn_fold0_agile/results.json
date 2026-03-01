@@ -11,7 +11,7 @@
   "fold_scores": null,
   "mean": null,
   "std": null,
-  "train_wall_time_sec": 1.747,
+  "train_wall_time_sec": 1.662,
   "dataset_size": null,
   "num_params": null,
   "seed": 42,
@@ -37,7 +37,7 @@
   "output_path": "results/daily/2026-03-01/daily11_alignn/alignn_fold0_agile/results.json",
   "env": {
     "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
-    "git_commit": "5259d7a78c44c2388efd0a1826bae76e0b4e29f9",
+    "git_commit": "89c8887be0483e3c10391e33b166473e6a108aad",
     "torch": "2.2.1+cu121",
     "cuda_available": true,
     "gpu_type": "NVIDIA L4"
@@ -64,5 +64,6 @@
     "stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 17, in <module>\n    from matbench.bench import MatbenchBenchmark\nModuleNotFoundError: No module named 'matbench'"
   },
   "error_message": "runner exited with code 1",
-  "traceback_or_stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 17, in <module>\n    from matbench.bench import MatbenchBenchmark\nModuleNotFoundError: No module named 'matbench'"
+  "traceback_or_stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 17, in <module>\n    from matbench.bench import MatbenchBenchmark\nModuleNotFoundError: No module named 'matbench'",
+  "source_output_path": "results/daily/2026-03-01/daily11_alignn/alignn_fold0_agile/results.json"
 }
