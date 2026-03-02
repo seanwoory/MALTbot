@@ -17,11 +17,11 @@ import yaml
 from matbench.bench import MatbenchBenchmark
 from pymatgen.core import Structure
 
-try:
-    import dgl
-    import dgl.function as fn
-except Exception:
-    dgl = None
+# try:
+import dgl
+import dgl.function as fn
+# except Exception:
+# dgl = None
 
 
 class EdgeGatedGraphConv(nn.Module):
@@ -218,7 +218,7 @@ def build_dgl_graph(structure: Structure, cutoff: float, max_neighbors: int):
 def build_dgl_graph_with_adaptive_cutoff(structure: Structure, cutoff: float, max_neighbors: int):
     last_err = None
     for c in [cutoff, max(cutoff, 10.0), max(cutoff, 20.0)]:
-        try:
+        # try:
             return build_dgl_graph(structure, c, max_neighbors), c
         except Exception as e:
             last_err = e
@@ -377,11 +377,11 @@ def main():
         if h not in cache_targets:
             continue
         if not cache.has(h):
-            try:
+            # try:
                 (g, lg), _ = build_dgl_graph_with_adaptive_cutoff(s, cfg.cutoff, cfg.max_neighbors)
                 cache.put(h, g, lg)
                 built += 1
-            except Exception:
+            # except Exception:
                 skipped += 1
     print(f"[cache] built={built} skipped={skipped} target={len(cache_targets)}")
 
