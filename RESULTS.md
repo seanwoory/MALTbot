@@ -61,3 +61,4 @@
 
 2026-03-02 | matbench_mp_e_form | alignn_fold0_agile | METRIC=ERROR | ALIGNN-like fold0 agile baseline | results/daily/2026-03-02/daily11_alignn/alignn_fold0_agile/results.json
 2026-03-02 | matbench_mp_e_form | alignn_fold0_agile | METRIC=ERROR | ALIGNN-like fold0 agile baseline | results/daily/2026-03-02/daily11_alignn/alignn_fold0_agile/results.json
+2026-03-02 | matbench_mp_e_form | alignn_fold0_agile | METRIC=ERROR | ALIGNN-like fold0 agile baseline | results/daily/2026-03-02/daily11_alignn/alignn_fold0_agile/results.json

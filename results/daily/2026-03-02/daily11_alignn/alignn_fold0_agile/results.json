@@ -11,7 +11,7 @@
   "fold_scores": null,
   "mean": null,
   "std": null,
-  "train_wall_time_sec": 4.289,
+  "train_wall_time_sec": 0.062,
   "dataset_size": null,
   "num_params": null,
   "seed": 42,
@@ -37,7 +37,7 @@
   "output_path": "results/daily/2026-03-02/daily11_alignn/alignn_fold0_agile/results.json",
   "env": {
     "python": "3.12.12 (main, Oct 10 2025, 08:52:57) [GCC 11.4.0]",
-    "git_commit": "53203a3f7e5a81a380cd3de191d9295dc50ef4e9",
+    "git_commit": "b4fab99a92bf4461758de2cc11bd36a9c4548f71",
     "torch": "2.2.1+cu121",
     "cuda_available": true,
     "gpu_type": "NVIDIA L4"
@@ -60,10 +60,10 @@
   },
   "run": {
     "returncode": 1,
-    "stdout_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 505, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 292, in main\n    raise RuntimeError(\"DGL import failed.\")\nRuntimeError: DGL import failed.",
-    "stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 505, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 292, in main\n    raise RuntimeError(\"DGL import failed.\")\nRuntimeError: DGL import failed."
+    "stdout_tail": "  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 223\n    except Exception as e:\n                          ^\nIndentationError: unindent does not match any outer indentation level",
+    "stderr_tail": "  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 223\n    except Exception as e:\n                          ^\nIndentationError: unindent does not match any outer indentation level"
   },
   "error_message": "runner exited with code 1",
-  "traceback_or_stderr_tail": "Traceback (most recent call last):\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 505, in <module>\n    main()\n  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 292, in main\n    raise RuntimeError(\"DGL import failed.\")\nRuntimeError: DGL import failed.",
+  "traceback_or_stderr_tail": "  File \"/content/MALTbot/scripts/run_alignn_mp_e_form.py\", line 223\n    except Exception as e:\n                          ^\nIndentationError: unindent does not match any outer indentation level",
   "source_output_path": "results/daily/2026-03-02/daily11_alignn/alignn_fold0_agile/results.json"
 }
